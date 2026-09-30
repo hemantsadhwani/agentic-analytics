@@ -1,0 +1,26 @@
+{
+  "sample": "sales",
+  "note": "SYNTHETIC data. reference_sql hard-codes the month (2026-09, the latest in the sample) so it is computed independently of the SQL under test. expected is the reference result rounded to 4 dp, pasted; the eval re-runs reference_sql and fails if the two ever drift.",
+  "questions": [
+    {"question": "Which region had the highest net revenue last month?",
+     "expected_tables": ["orders"], "expected_metric": "net_revenue",
+     "reference_sql": "SELECT region, SUM(revenue) FROM orders WHERE order_date BETWEEN '2026-09-01' AND '2026-09-31' GROUP BY region ORDER BY SUM(revenue) DESC LIMIT 1",
+     "expected": [["North", 33661.95]]},
+    {"question": "How many orders were placed last month?",
+     "expected_tables": ["orders"], "expected_metric": "orders",
+     "reference_sql": "SELECT COUNT(*) FROM orders WHERE order_date LIKE '2026-09-%'",
+     "expected": [[160]]},
+    {"question": "What was the month-over-month change in sales last month?",
+     "expected_tables": ["orders"], "expected_metric": "mom_change_pct",
+     "reference_sql": "SELECT '2026-09', 100.0 * ((SELECT SUM(revenue) FROM orders WHERE order_date LIKE '2026-09-%') / (SELECT SUM(revenue) FROM orders WHERE order_date LIKE '2026-08-%') - 1)",
+     "expected": [["2026-09", -9.8078]]},
+    {"question": "Net revenue by customer segment last month",
+     "expected_tables": ["orders", "customers"], "expected_metric": "net_revenue",
+     "reference_sql": "SELECT c.segment, SUM(o.revenue) FROM customers c, orders o WHERE o.customer_id = c.customer_id AND o.order_date LIKE '2026-09-%' GROUP BY c.segment",
+     "expected": [["Consumer", 53382.3], ["Enterprise", 13881.05], ["SMB", 44586.85]]},
+    {"question": "Which product category earned the most turnover last month?",
+     "expected_tables": ["orders", "products"], "expected_metric": "net_revenue",
+     "reference_sql": "SELECT p.category, SUM(o.revenue) AS r FROM orders o, products p WHERE o.product = p.product AND o.order_date LIKE '2026-09-%' GROUP BY p.category ORDER BY r DESC LIMIT 1",
+     "expected": [["Computing", 63731.0]]}
+  ]
+}

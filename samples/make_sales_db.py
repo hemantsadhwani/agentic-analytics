@@ -1,7 +1,12 @@
 """Build ``samples/sales.sqlite``: SYNTHETIC orders for six months (Apr-Sep 2026).
 
 Seeded and deterministic: the same file (same rows) on every machine. Small on purpose
-(~900 orders, one table) so a reviewer can read the whole schema in one glance.
+(~900 orders, 60 customers, 8 products) so a reviewer can read the whole schema in one glance.
+
+Three tables: ``orders`` (the fact table), ``customers`` and ``products``. ``orders`` declares
+foreign keys to both, which the schema graph reads with ``PRAGMA foreign_key_list``.
+Customers are assigned from a second RNG, so the order rows (and every number in the
+sales report) are identical to the one-table version.
 
     python samples/make_sales_db.py [path]
 """
@@ -29,17 +34,40 @@ PRODUCTS = {                       # product -> (unit price, popularity weight)
     "Harbor Tablet": (640.0, 3),
 }
 MONTH_TREND = [1.00, 1.04, 0.97, 1.08, 1.12, 1.06]   # seasonality, applied to order count
+CATEGORIES = {
+    "Atlas Laptop": "Computing", "Harbor Tablet": "Computing", "Beacon Monitor": "Displays",
+    "Cobalt Dock": "Peripherals", "Ember Keyboard": "Peripherals", "Flux Mouse": "Peripherals",
+    "Delta Headset": "Audio and video", "Garnet Webcam": "Audio and video",
+}
+SEGMENTS = {"Enterprise": 1, "SMB": 3, "Consumer": 4}            # segment -> weight
+CITIES = ["Pune", "Leeds", "Austin", "Lyon", "Osaka", "Porto", "Tempe", "Graz"]
+N_CUSTOMERS = 60
 
-SCHEMA = """
+SCHEMA = [
+    """
+CREATE TABLE customers (
+    customer_id   INTEGER PRIMARY KEY,
+    customer_name TEXT NOT NULL,
+    segment       TEXT NOT NULL,    -- Enterprise | SMB | Consumer
+    city          TEXT NOT NULL
+)""",
+    """
+CREATE TABLE products (
+    product    TEXT PRIMARY KEY,
+    category   TEXT NOT NULL,
+    unit_price REAL NOT NULL
+)""",
+    """
 CREATE TABLE orders (
-    order_id   INTEGER PRIMARY KEY,
-    order_date TEXT NOT NULL,     -- YYYY-MM-DD
-    region     TEXT NOT NULL,
-    product    TEXT NOT NULL,
-    units      INTEGER NOT NULL,
-    revenue    REAL NOT NULL      -- units * unit price * (1 - discount), 2 dp
-)
-"""
+    order_id    INTEGER PRIMARY KEY,
+    order_date  TEXT NOT NULL,     -- YYYY-MM-DD
+    region      TEXT NOT NULL,
+    product     TEXT NOT NULL REFERENCES products(product),
+    units       INTEGER NOT NULL,
+    revenue     REAL NOT NULL,     -- units * unit price * (1 - discount), 2 dp
+    customer_id INTEGER NOT NULL REFERENCES customers(customer_id)
+)""",
+]
 
 
 def build(path: str | Path = DEFAULT_PATH) -> Path:
@@ -48,6 +76,10 @@ def build(path: str | Path = DEFAULT_PATH) -> Path:
     if path.exists():
         path.unlink()
     rng = random.Random(SEED)
+    crng = random.Random(SEED + 1)     # customers only: keeps the order rows unchanged
+    seg_names, seg_w = list(SEGMENTS), list(SEGMENTS.values())
+    customers = [(cid, f"Customer {cid:03d}", crng.choices(seg_names, seg_w)[0],
+                  crng.choice(CITIES)) for cid in range(1, N_CUSTOMERS + 1)]
     names, weights = list(PRODUCTS), [w for _, w in PRODUCTS.values()]
     rows = []
     oid = 1
@@ -60,12 +92,17 @@ def build(path: str | Path = DEFAULT_PATH) -> Path:
                 discount = rng.choice([0.0, 0.0, 0.05, 0.1])
                 day = rng.randint(1, 28)
                 rows.append((oid, f"{month}-{day:02d}", region, product, units,
-                             round(units * price * (1 - discount), 2)))
+                             round(units * price * (1 - discount), 2),
+                             crng.randint(1, N_CUSTOMERS)))
                 oid += 1
     conn = sqlite3.connect(path)
     with conn:
-        conn.execute(SCHEMA)
-        conn.executemany("INSERT INTO orders VALUES (?, ?, ?, ?, ?, ?)", rows)
+        for ddl in SCHEMA:
+            conn.execute(ddl)
+        conn.executemany("INSERT INTO customers VALUES (?, ?, ?, ?)", customers)
+        conn.executemany("INSERT INTO products VALUES (?, ?, ?)",
+                         [(p, CATEGORIES[p], price) for p, (price, _) in PRODUCTS.items()])
+        conn.executemany("INSERT INTO orders VALUES (?, ?, ?, ?, ?, ?, ?)", rows)
     conn.close()
     return path
 

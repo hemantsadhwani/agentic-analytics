@@ -6,12 +6,13 @@ OLLAMA_MODEL ?= qwen2.5:7b-instruct
 IMAGE ?= agentic-reporting:0.1.0
 SPEC ?= specs/sales_mbr.yaml
 DATA ?= samples/sales.sqlite
+Q ?= Which region had the highest net revenue last month?
 
-.PHONY: help install samples test lint eval demo resume list demo-private demo-bedrock \
+.PHONY: help install samples test lint eval demo demo-ask resume list demo-private demo-bedrock \
         docker-build docker-demo clean
 
 help:
-	@echo "install samples test lint eval demo resume THREAD=.. DECISION=.. list"
+	@echo "install samples test lint eval demo demo-ask resume THREAD=.. DECISION=.. list"
 	@echo "demo-private demo-bedrock docker-build docker-demo clean"
 
 install:
@@ -29,10 +30,16 @@ lint:
 
 eval:
 	$(PY) -m eval.report_eval --fake
+	$(PY) -m eval.schema_linking_eval --fake
 
 # Offline, deterministic: drafts the sales MBR with the fake provider and PAUSES at the gate.
 demo: samples
 	$(PY) -m agentic_reporting.run --spec $(SPEC) --db $(DATA) --provider fake
+
+# Offline: question -> schema graph -> linked subset -> SQL (fake writer) -> rows, read-only.
+# make demo-ask DATA=samples/ops.sqlite Q="Which team had the most incidents last month?"
+demo-ask: samples
+	$(PY) -m agentic_reporting.ask --db $(DATA) "$(Q)"
 
 # make resume THREAD=sales_mbr-20260930T101500Z DECISION=approve   (or reject)
 resume:

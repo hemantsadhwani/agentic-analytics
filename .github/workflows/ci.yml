@@ -3,7 +3,8 @@ name: ci
 # Every job is offline and deterministic: the fake provider, synthetic data, no keys.
 #
 #   test (3.12, 3.13) ── pytest over the whole pipeline, private-mode test included
-#   eval               ── golden reports: every section present, 0 unverified, fabrication caught
+#   eval               ── golden reports: every section present, 0 unverified, fabrication caught;
+#                         golden schema questions: linking + execution accuracy, unsafe SQL refused
 #   lint               ── ruff
 #   docker             ── the image builds (not pushed)
 #   k8s                ── the manifests render
@@ -54,6 +55,7 @@ jobs:
           cache-dependency-path: pyproject.toml
       - run: pip install -e ".[dev]"
       - run: python -m eval.report_eval --fake
+      - run: python -m eval.schema_linking_eval --fake
 
   lint:
     runs-on: ubuntu-latest

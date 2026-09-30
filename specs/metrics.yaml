@@ -1,0 +1,79 @@
+# Governed metrics: the one agreed definition of each business number (SYNTHETIC samples).
+#
+# The schema graph (agentic_reporting/schema_graph.py) loads a metric into a database's graph
+# only if its table and every column it derives from exist there, so one file serves both
+# sample databases. Schema linking finds a metric by its name or a synonym; the SQL writer
+# is told to use `expression` as written. Change a definition here, in review, never in a
+# prompt. `derives_from` lists columns (table.column) and other metrics (metric:<name>).
+metrics:
+  # --- samples/sales.sqlite --------------------------------------------------------------
+  - name: net_revenue
+    label: Net revenue
+    table: orders
+    expression: ROUND(SUM(orders.revenue), 2)
+    grain: order line; sum over any dimension (region, product, customer) or period
+    time_column: orders.order_date
+    derives_from: [orders.revenue]
+    synonyms: [revenue, sales, turnover, net sales, income]
+    owner: Finance analytics (synthetic owner)
+    description: Revenue after line discounts (orders.revenue is already net of discount).
+
+  - name: orders
+    label: Orders
+    table: orders
+    expression: COUNT(DISTINCT orders.order_id)
+    grain: one order per orders row; count over any dimension or period
+    time_column: orders.order_date
+    derives_from: [orders.order_id]
+    synonyms: [order count, number of orders, order volume, orders placed]
+    owner: Sales operations (synthetic owner)
+    description: Number of distinct orders.
+
+  - name: mom_change_pct
+    label: Month-on-month change in net revenue (%)
+    table: orders
+    expression: ROUND(100.0 * (cur.net_revenue - prev.net_revenue) / prev.net_revenue, 1)
+    grain: >-
+      calendar month; cur and prev are net_revenue for month m and month m-1, where
+      month = substr(orders.order_date, 1, 7)
+    time_column: orders.order_date
+    derives_from: [metric:net_revenue, orders.order_date]
+    synonyms: [month over month change, mom change, mom, monthly change, revenue growth,
+               change in sales, change in revenue]
+    owner: Finance analytics (synthetic owner)
+    description: Percent change of net revenue against the previous calendar month.
+
+  # --- samples/ops.sqlite ----------------------------------------------------------------
+  - name: incident_count
+    label: Incident count
+    table: incidents
+    expression: COUNT(incidents.incident_id)
+    grain: one incident per incidents row; count over any dimension or period
+    time_column: incidents.opened_at
+    derives_from: [incidents.incident_id]
+    synonyms: [incidents, number of incidents, incident volume, outages]
+    owner: SRE leadership (synthetic owner)
+    description: Number of incidents opened.
+
+  - name: mttr_hours
+    label: Mean time to restore (hours)
+    table: incidents
+    expression: ROUND(AVG(incidents.minutes_to_restore) / 60.0, 3)
+    grain: incident; average over any dimension or period
+    time_column: incidents.opened_at
+    derives_from: [incidents.minutes_to_restore]
+    synonyms: [mttr, mean time to restore, time to restore, restore time, mean time to recovery,
+               recovery time]
+    owner: SRE leadership (synthetic owner)
+    description: Average minutes from open to restore, in hours.
+
+  - name: sev1_share
+    label: SEV1 share of incidents (%)
+    table: incidents
+    expression: ROUND(100.0 * SUM(incidents.severity = 'SEV1') / COUNT(incidents.incident_id), 2)
+    grain: incident; a percentage over any dimension or period
+    time_column: incidents.opened_at
+    derives_from: [metric:incident_count, incidents.severity]
+    synonyms: [sev1 share, share of sev1, sev1 rate, sev1 percentage, critical incident share]
+    owner: SRE leadership (synthetic owner)
+    description: Percent of incidents whose severity is SEV1 (the worst).

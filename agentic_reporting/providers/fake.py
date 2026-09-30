@@ -122,3 +122,115 @@ class FabricatingProvider(FactsFakeProvider):
         if self.repairable and is_repair(messages):
             return text
         return f"{text} Analysts expect {FABRICATED} next quarter."
+
+
+# --- text-to-SQL ---------------------------------------------------------------------------
+# Hand-written SQL for the golden schema questions (eval/datasets/golden/schema_questions_*).
+# Written against the governed metric expressions and the linked join paths, in a different
+# style from the golden files' reference SQL (which hard-codes the month), so the eval
+# compares two independent computations. Keyed by the lower-cased question without "?".
+
+_LATEST_SALES = "latest AS (SELECT MAX(substr(order_date, 1, 7)) AS m FROM orders)"
+_IN_LATEST_SALES = "JOIN latest ON substr(orders.order_date, 1, 7) = latest.m"
+_LATEST_OPS = "latest AS (SELECT MAX(substr(opened_at, 1, 7)) AS m FROM incidents)"
+_IN_LATEST_OPS = "JOIN latest ON substr(incidents.opened_at, 1, 7) = latest.m"
+
+GOLDEN_SQL: dict[str, tuple[str, list[str]]] = {
+    "which region had the highest net revenue last month": (
+        f"WITH {_LATEST_SALES} SELECT orders.region AS region, "
+        f"ROUND(SUM(orders.revenue), 2) AS net_revenue FROM orders {_IN_LATEST_SALES} "
+        "GROUP BY orders.region ORDER BY net_revenue DESC LIMIT 1", ["net_revenue"]),
+    "how many orders were placed last month": (
+        f"WITH {_LATEST_SALES} SELECT COUNT(DISTINCT orders.order_id) AS orders "
+        f"FROM orders {_IN_LATEST_SALES}", ["orders"]),
+    "what was the month-over-month change in sales last month": (
+        "WITH monthly AS (SELECT substr(orders.order_date, 1, 7) AS month, "
+        "ROUND(SUM(orders.revenue), 2) AS net_revenue FROM orders GROUP BY month), "
+        "ranked AS (SELECT month, net_revenue, ROW_NUMBER() OVER (ORDER BY month DESC) AS rn "
+        "FROM monthly) SELECT cur.month AS month, "
+        "ROUND(100.0 * (cur.net_revenue - prev.net_revenue) / prev.net_revenue, 1) "
+        "AS mom_change_pct FROM ranked AS cur JOIN ranked AS prev ON cur.rn = 1 AND prev.rn = 2",
+        ["mom_change_pct", "net_revenue"]),
+    "net revenue by customer segment last month": (
+        f"WITH {_LATEST_SALES} SELECT customers.segment AS segment, "
+        "ROUND(SUM(orders.revenue), 2) AS net_revenue FROM orders "
+        f"JOIN customers ON orders.customer_id = customers.customer_id {_IN_LATEST_SALES} "
+        "GROUP BY customers.segment ORDER BY net_revenue DESC", ["net_revenue"]),
+    "which product category earned the most turnover last month": (
+        f"WITH {_LATEST_SALES} SELECT products.category AS category, "
+        "ROUND(SUM(orders.revenue), 2) AS net_revenue FROM orders "
+        f"JOIN products ON orders.product = products.product {_IN_LATEST_SALES} "
+        "GROUP BY products.category ORDER BY net_revenue DESC LIMIT 1", ["net_revenue"]),
+    "how many incidents were opened last month": (
+        f"WITH {_LATEST_OPS} SELECT COUNT(incidents.incident_id) AS incident_count "
+        f"FROM incidents {_IN_LATEST_OPS}", ["incident_count"]),
+    "what was the mttr in hours by severity last month": (
+        f"WITH {_LATEST_OPS} SELECT incidents.severity AS severity, "
+        "ROUND(AVG(incidents.minutes_to_restore) / 60.0, 3) AS mttr_hours "
+        f"FROM incidents {_IN_LATEST_OPS} GROUP BY incidents.severity ORDER BY severity",
+        ["mttr_hours"]),
+    "what share of incidents were sev1 last month": (
+        f"WITH {_LATEST_OPS} SELECT ROUND(100.0 * SUM(incidents.severity = 'SEV1') "
+        f"/ COUNT(incidents.incident_id), 2) AS sev1_share FROM incidents {_IN_LATEST_OPS}",
+        ["sev1_share"]),
+    "which team had the most incidents last month": (
+        f"WITH {_LATEST_OPS} SELECT teams.team_name AS team, "
+        "COUNT(incidents.incident_id) AS incident_count FROM incidents "
+        "JOIN services ON incidents.service = services.service "
+        f"JOIN teams ON services.team_id = teams.team_id {_IN_LATEST_OPS} "
+        "GROUP BY teams.team_name ORDER BY incident_count DESC LIMIT 1", ["incident_count"]),
+    "mean time to restore by service tier last month": (
+        f"WITH {_LATEST_OPS} SELECT services.tier AS tier, "
+        "ROUND(AVG(incidents.minutes_to_restore) / 60.0, 3) AS mttr_hours FROM incidents "
+        f"JOIN services ON incidents.service = services.service {_IN_LATEST_OPS} "
+        "GROUP BY services.tier ORDER BY tier", ["mttr_hours"]),
+}
+
+
+def question_key(question: str) -> str:
+    return " ".join(question.lower().strip().rstrip("?").split())
+
+
+def question_from(messages: list[dict]) -> str:
+    """The question the SQL-writer prompt carries on the line after ``QUESTION:``."""
+    from agentic_reporting.sql_writer import QUESTION_MARKER
+    lines = str(messages[-1].get("content", "")).splitlines()
+    for n, line in enumerate(lines):
+        if line.strip() == QUESTION_MARKER and n + 1 < len(lines):
+            return lines[n + 1]
+    raise ValueError("no QUESTION block in the prompt")
+
+
+class FakeSQLProvider:
+    """Offline SQL writer: returns the hand-written SQL for a golden question.
+
+    It reads the question from the prompt exactly as a real model would. Any other question
+    raises ``ProviderUnavailable``: the fake proves the pipeline (link, guard, read-only
+    execution, comparison), not a model's SQL.
+    """
+
+    name = "fake"
+    model = "sql-fake-1"
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    def complete(self, *, system: str, messages: list[dict], max_tokens: int,
+                 schema: Any = None, cache_system: bool = True) -> LLMResponse:
+        from agentic_reporting.providers.base import ProviderUnavailable
+        from agentic_reporting.sql_writer import SQLAnswer
+
+        self.calls.append({"system": system, "messages": messages})
+        question = question_from(messages)
+        if question_key(question) not in GOLDEN_SQL:
+            raise ProviderUnavailable(
+                "the offline fake SQL writer knows only the golden questions in "
+                "eval/datasets/golden/schema_questions_*.json; for any other question use "
+                "--provider anthropic|bedrock|ollama")
+        sql, metrics = GOLDEN_SQL[question_key(question)]
+        answer = SQLAnswer(sql=sql, uses_metrics=metrics,
+                           rationale="hand-written SQL for a golden question (offline fake)")
+        in_tok = (len(system) + sum(len(str(m.get("content", ""))) for m in messages)) // 4
+        return LLMResponse(text=answer.model_dump_json(), parsed=answer, provider=self.name,
+                           model=self.model, input_tokens=in_tok, output_tokens=len(sql) // 4,
+                           cost_usd=0.0, structured_mode="native")

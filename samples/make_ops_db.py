@@ -1,7 +1,10 @@
 """Build ``samples/ops.sqlite``: SYNTHETIC IT-ops incidents for six months (Apr-Sep 2026).
 
-Seeded and deterministic. One table of incidents with a severity (SEV1 worst .. SEV4),
-the affected service, and the minutes from open to restore.
+Seeded and deterministic. ``incidents`` holds a severity (SEV1 worst .. SEV4), the affected
+service, and the minutes from open to restore. ``services`` gives each service a tier and an
+owning ``team_id``; ``teams`` names the team. ``incidents.service`` declares a foreign key;
+``services.team_id`` deliberately does not, so the schema graph has to infer that join from
+the shared ``*_id`` column name. The incident rows are identical to the one-table version.
 
     python samples/make_ops_db.py [path]
 """
@@ -25,16 +28,35 @@ SERVICES = {                         # service -> incident weight
 }
 SEVERITIES = {"SEV1": (1, 180), "SEV2": (3, 95), "SEV3": (8, 45), "SEV4": (12, 20)}
 # severity -> (weight, typical minutes to restore)
+TEAMS = {1: "Payments", 2: "Identity", 3: "Discovery", 4: "Platform"}
+SERVICE_INFO = {                     # service -> (tier, team_id)
+    "payments-api": ("tier-1", 1), "checkout-web": ("tier-1", 1),
+    "auth-service": ("tier-1", 2), "search": ("tier-2", 3), "cdn-edge": ("tier-1", 3),
+    "inventory-sync": ("tier-2", 4), "notifications": ("tier-3", 4),
+    "reporting-etl": ("tier-3", 4),
+}
 
-SCHEMA = """
+SCHEMA = [
+    """
+CREATE TABLE teams (
+    team_id   INTEGER PRIMARY KEY,
+    team_name TEXT NOT NULL
+)""",
+    """
+CREATE TABLE services (
+    service TEXT PRIMARY KEY,
+    tier    TEXT NOT NULL,      -- tier-1 (customer-facing) .. tier-3
+    team_id INTEGER NOT NULL    -- no declared FK on purpose: the graph infers it by name
+)""",
+    """
 CREATE TABLE incidents (
     incident_id        INTEGER PRIMARY KEY,
     opened_at          TEXT NOT NULL,   -- YYYY-MM-DD HH:MM
     severity           TEXT NOT NULL,   -- SEV1 (worst) .. SEV4
-    service            TEXT NOT NULL,
+    service            TEXT NOT NULL REFERENCES services(service),
     minutes_to_restore INTEGER NOT NULL
-)
-"""
+)""",
+]
 
 
 def build(path: str | Path = DEFAULT_PATH) -> Path:
@@ -60,7 +82,11 @@ def build(path: str | Path = DEFAULT_PATH) -> Path:
         day += timedelta(days=1)
     conn = sqlite3.connect(path)
     with conn:
-        conn.execute(SCHEMA)
+        for ddl in SCHEMA:
+            conn.execute(ddl)
+        conn.executemany("INSERT INTO teams VALUES (?, ?)", list(TEAMS.items()))
+        conn.executemany("INSERT INTO services VALUES (?, ?, ?)",
+                         [(s, tier, team) for s, (tier, team) in SERVICE_INFO.items()])
         conn.executemany("INSERT INTO incidents VALUES (?, ?, ?, ?, ?)", rows)
     conn.close()
     return path

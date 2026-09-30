@@ -71,10 +71,34 @@ def connect_ro(db_path: str | Path) -> sqlite3.Connection:
     return conn
 
 
-def run_query(db_path: str | Path, sql: str, row_cap: int = ROW_CAP) -> QueryResult:
+def only_tables(allowed: set[str] | frozenset[str]):
+    """A SQLite authorizer: plain SELECT reads of ``allowed`` tables and function calls only.
+
+    SQLite reports every column read against the real table (CTEs and subqueries resolved),
+    so a query that touches any other table, or tries anything but a read, fails to prepare.
+    """
+    allow = {t.lower() for t in allowed}
+    ok_actions = {sqlite3.SQLITE_SELECT, sqlite3.SQLITE_FUNCTION, sqlite3.SQLITE_RECURSIVE}
+
+    def authorize(action: int, arg1: str | None, arg2: str | None, db: str | None,
+                  trigger: str | None) -> int:
+        if action in ok_actions:
+            return sqlite3.SQLITE_OK
+        if action == sqlite3.SQLITE_READ and (arg1 or "").lower() in allow:
+            return sqlite3.SQLITE_OK
+        return sqlite3.SQLITE_DENY
+
+    return authorize
+
+
+def run_query(db_path: str | Path, sql: str, row_cap: int = ROW_CAP,
+              allowed_tables: set[str] | frozenset[str] | None = None) -> QueryResult:
+    """``allowed_tables``, if given, is a fourth lock: SQLite refuses reads of any other table."""
     sql = validate_sql(sql)
     conn = connect_ro(db_path)
     try:
+        if allowed_tables is not None:
+            conn.set_authorizer(only_tables(allowed_tables))
         cur = conn.execute(sql)
         columns = [d[0] for d in (cur.description or [])]
         fetched = cur.fetchmany(row_cap + 1)

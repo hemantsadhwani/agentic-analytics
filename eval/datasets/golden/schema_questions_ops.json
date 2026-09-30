@@ -1,0 +1,26 @@
+{
+  "sample": "ops",
+  "note": "SYNTHETIC data. reference_sql hard-codes the month (2026-09, the latest in the sample) so it is computed independently of the SQL under test. expected is the reference result rounded to 4 dp, pasted; the eval re-runs reference_sql and fails if the two ever drift.",
+  "questions": [
+    {"question": "How many incidents were opened last month?",
+     "expected_tables": ["incidents"], "expected_metric": "incident_count",
+     "reference_sql": "SELECT COUNT(*) FROM incidents WHERE opened_at LIKE '2026-09-%'",
+     "expected": [[87]]},
+    {"question": "What was the MTTR in hours by severity last month?",
+     "expected_tables": ["incidents"], "expected_metric": "mttr_hours",
+     "reference_sql": "SELECT severity, SUM(minutes_to_restore) / 60.0 / COUNT(*) FROM incidents WHERE opened_at LIKE '2026-09-%' GROUP BY severity",
+     "expected": [["SEV1", 3.3222], ["SEV2", 1.6389], ["SEV3", 0.7772], ["SEV4", 0.3477]]},
+    {"question": "What share of incidents were SEV1 last month?",
+     "expected_tables": ["incidents"], "expected_metric": "sev1_share",
+     "reference_sql": "SELECT 100.0 * (SELECT COUNT(*) FROM incidents WHERE severity = 'SEV1' AND opened_at LIKE '2026-09-%') / (SELECT COUNT(*) FROM incidents WHERE opened_at LIKE '2026-09-%')",
+     "expected": [[3.4483]]},
+    {"question": "Which team had the most incidents last month?",
+     "expected_tables": ["incidents", "services", "teams"], "expected_metric": "incident_count",
+     "reference_sql": "SELECT t.team_name, COUNT(*) AS n FROM incidents i, services s, teams t WHERE i.service = s.service AND s.team_id = t.team_id AND i.opened_at LIKE '2026-09-%' GROUP BY t.team_name ORDER BY n DESC LIMIT 1",
+     "expected": [["Payments", 32]]},
+    {"question": "Mean time to restore by service tier last month",
+     "expected_tables": ["incidents", "services"], "expected_metric": "mttr_hours",
+     "reference_sql": "SELECT s.tier, AVG(i.minutes_to_restore) / 60.0 FROM incidents i JOIN services s USING (service) WHERE i.opened_at LIKE '2026-09-%' GROUP BY s.tier",
+     "expected": [["tier-1", 0.7415], ["tier-2", 0.8675], ["tier-3", 0.7294]]}
+  ]
+}
