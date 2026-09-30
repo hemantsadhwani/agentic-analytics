@@ -6,7 +6,7 @@ An audit row records it. Golden reports gate it in CI. The same pipeline runs ag
 model with no network.**
 
 Built with LangGraph (checkpointed graph, `interrupt()` human gate), Pydantic structured
-output, SQLite, and one provider interface for Claude (Anthropic API or AWS Bedrock), a local
+output, SQLite, a `networkx` schema graph, and one provider interface for Claude (Anthropic API or AWS Bedrock), a local
 Ollama model, or an offline fake. All sample data is **synthetic** (`samples/README.md`).
 
 ## The 60-second version
@@ -41,6 +41,7 @@ unreliable numbers. This repo splits the two jobs:
 | Provider-agnostic | `LLM_PROVIDER=fake\|anthropic\|bedrock\|ollama`, one interface | `providers/`, `tests/test_router.py` |
 | Private mode | Ollama run with every socket connect patched to fail: zero attempts | `tests/test_private_mode.py`, `docker-compose.yml` |
 | Crash-safe | One section per checkpointed step; `--resume` continues without re-drafting | `tests/test_cli.py::test_crash_then_resume_completes_without_redrafting` |
+| Schema graph linking | Deterministic question → tables, join path, governed metric; the model sees only that subset; SQL guarded, read-only, linked tables only | `schema_graph.py`, `sql_writer.py`, `specs/metrics.yaml`, `tests/test_schema_graph.py`, `eval/schema_linking_eval.py` |
 
 ## Quickstart (offline, $0, no key)
 
@@ -115,6 +116,71 @@ repair must clear it); `fabricate-always` keeps adding it (it must be published 
 REPORT-EVAL PASS (2 golden reports × 3 providers)
 ```
 
+## From question to SQL: the schema graph
+
+A second path answers a plain-English question with SQL, without showing the model the
+schema or the rows. **The graph holds the map; the warehouse holds the rows** (ADR-0005):
+
+1. `schema_graph.py` builds a `networkx` graph from SQLite **metadata only**: tables,
+   columns, join keys (declared foreign keys, plus a shared `*_id` primary key), and
+   **governed metrics** from [`specs/metrics.yaml`](specs/metrics.yaml) (SQL expression,
+   grain, synonyms, owner). It is written to `.agentic_reporting/schema_graph.json`.
+2. `link()` is **deterministic, no LLM**: word overlap with table, column and metric names
+   and synonyms, then the shortest join path through the graph.
+3. `write_sql()` makes **one** structured call that sees only the linked subset and returns
+   `{sql, uses_metrics, rationale}`. The SQL gets the report-spec guard (one `SELECT`, no
+   writes), then runs read-only with the row cap and a SQLite authorizer that allows reads of
+   the **linked tables only**.
+
+`make demo-ask` (offline fake SQL writer, captured 30 Sep 2026):
+
+```
+schema graph samples/sales.sqlite: 3 tables, 14 columns, 2 joins, 3 metrics, 16 terms; edges: 14 has_column, 4 joins_on, 4 derives_from, 16 synonym_of -> .agentic_reporting/schema_graph.json
+question: Which region had the highest net revenue last month?
+linked  confidence 1.00
+  tables   orders
+  columns  orders.revenue, orders.order_date, orders.region
+  joins    - (single table)
+  metric   net_revenue = ROUND(SUM(orders.revenue), 2)  [owner: Finance analytics (synthetic owner)]
+sql (fake/sql-fake-1, uses net_revenue):
+    WITH latest AS (SELECT MAX(substr(order_date, 1, 7)) AS m FROM orders)
+    SELECT orders.region AS region, ROUND(SUM(orders.revenue), 2) AS net_revenue
+    FROM orders
+    JOIN latest ON substr(orders.order_date, 1, 7) = latest.m
+    GROUP BY orders.region
+    ORDER BY net_revenue DESC
+    LIMIT 1
+result (1 row; read-only, tables orders only):
+    region | net_revenue
+    -------+------------
+    North  | 33661.95
+```
+
+A two-hop join the question never spells out (`make demo-ask DATA=samples/ops.sqlite
+Q="Which team had the most incidents last month?"`) links `incidents → services → teams`,
+the second join inferred from the undeclared `services.team_id`:
+
+```
+  tables   incidents, services, teams
+  joins    incidents.service = services.service  (foreign key); services.team_id = teams.team_id  (name)
+  metric   incident_count = COUNT(incidents.incident_id)  [owner: SRE leadership (synthetic owner)]
+```
+
+`python -m eval.schema_linking_eval --fake` (in `make eval` and CI): five golden questions
+per sample DB, each with expected tables, expected metric and a reference SQL result.
+
+```
+linking accuracy 10/10 (100%) · execution accuracy 10/10 (100%) · tolerance 0.5%
+SCHEMA-EVAL PASS (2 sample DBs, 10 questions, provider fake/sql-fake-1)
+```
+
+Two negative controls run with it: a provider that answers with `UPDATE` (10/10 refused,
+none executed) and SQL that returns no rows (0/10 matches). The fake writer's SQL is
+hand-written: this proves linking, the guards, the read-only path and the comparison, not a
+model's SQL. It knows only the ten golden questions; for others pass
+`--provider anthropic|bedrock|ollama`. A question that links nothing (confidence below 0.5)
+stops before any model call.
+
 ## CLI
 
 ```
@@ -124,6 +190,7 @@ python -m agentic_reporting.run --spec specs/sales_mbr.yaml --db samples/sales.s
 python -m agentic_reporting.run --resume --thread T --decision approve|reject
 python -m agentic_reporting.run --resume --thread T        # continue a crashed run
 python -m agentic_reporting.run --list
+python -m agentic_reporting.ask --db samples/sales.sqlite "<question>" [--provider fake|anthropic|bedrock|ollama]
 ```
 
 `--db` is the data source (read-only). `--checkpoint-db` holds run state and the audit table.
@@ -167,7 +234,7 @@ Claude on Bedrock: `make demo-bedrock` (AWS credentials from the standard chain,
   manifests. Verified on a local kind cluster on 30 Sep 2026: the job paused at the gate, an
   approve from the approver pod published the report to the PVC and wrote the audit row. Never
   claimed as a production deployment.
-* `.github/workflows/ci.yml`: pytest on 3.12 and 3.13, the golden-report eval, ruff, docker
+* `.github/workflows/ci.yml`: pytest on 3.12 and 3.13, the golden-report and schema-linking evals, ruff, docker
   build + smoke run, kustomize render.
 
 ## What this proves, and what it does not
@@ -175,7 +242,10 @@ Claude on Bedrock: `make demo-bedrock` (AWS credentials from the standard chain,
 **Proves:** numbers in a published report trace to a read-only query cell, or are visibly
 marked; nothing publishes without a recorded decision; the pipeline is resumable after a
 crash, costed, provider-agnostic, and runs with no network beyond a local model; CI fails if
-a golden report loses a section or a fabricated number reaches the page.
+a golden report loses a section or a fabricated number reaches the page. A plain-English
+question is linked to tables, a join path and a governed metric with no LLM, and the SQL the
+model writes from that subset alone is refused if it writes, names an unlinked metric, or
+reads an unlinked table; CI fails if a golden question links or answers wrongly.
 
 **Does not (yet):**
 * no charts or tables in the report body, prose only;
@@ -183,7 +253,13 @@ a golden report loses a section or a fabricated number reaches the page.
 * no cross-report or cross-section dependencies (a section sees only its own query);
 * no authentication or RBAC: `REPORT_APPROVER` is self-declared;
 * no Postgres checkpointer: state is one SQLite file;
-* no schema graph or text-to-SQL: a human writes each section's SQL;
+* report sections still use human-written SQL: text-to-SQL is a separate `ask` path, not
+  wired into the report pipeline;
+* schema linking is lexical: no embeddings, one primary metric per question, one database
+  per graph, joins only from foreign keys and shared `*_id` keys; unknown vocabulary links
+  nothing until someone adds a synonym;
+* the schema eval runs hand-written fake SQL only: no real-model text-to-SQL accuracy is
+  measured or claimed;
 * the checker cannot catch a wrong sentence built from true numbers, or an invented number
   that happens to fall within 0.5% of a fact in the same section. That is the reviewer's job.
 
@@ -194,6 +270,7 @@ a golden report loses a section or a fabricated number reaches the page.
 [0001 report from facts](docs/adr/0001-report-from-facts.md),
 [0002 deterministic number checker](docs/adr/0002-deterministic-number-checker.md),
 [0003 human publish gate and audit](docs/adr/0003-human-publish-gate-and-audit.md),
-[0004 provider-agnostic and private mode](docs/adr/0004-provider-agnostic-and-private-mode.md).
+[0004 provider-agnostic and private mode](docs/adr/0004-provider-agnostic-and-private-mode.md),
+[0005 schema graph for schema linking](docs/adr/0005-schema-graph-for-schema-linking.md).
 
 MIT licence. © 2026 Hemant Sadhwani.
