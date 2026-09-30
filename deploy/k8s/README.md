@@ -5,7 +5,10 @@ kubectl kustomize deploy/k8s            # render (CI does this on every push)
 kubectl apply -k deploy/k8s             # namespace, PVC, ConfigMap, CronJob, approver
 ```
 
-This is a **shape**, rendered in CI and not run against a live cluster by this repo. The image
+Rendered in CI on every push, and **verified once on a local kind cluster (30 Sep 2026)**: the
+CronJob was triggered by hand, logged `PAUSED thread=sales_mbr-… (publish?)`, the approve ran from the
+approver pod as `REPORT_APPROVER=hemant`, `/data/reports/sales_mbr/2026-09-30.md` appeared on the PVC,
+and `--list` showed one `approved by hemant` audit row. It has not run on a shared or managed cluster. The image
 is `agentic-reporting:0.1.0` built from the root `Dockerfile`; push it to your registry and
 change the `image:` lines (or add a kustomize `images:` override).
 

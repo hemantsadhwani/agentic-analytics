@@ -164,7 +164,9 @@ Claude on Bedrock: `make demo-bedrock` (AWS credentials from the standard chain,
 * `deploy/k8s/`: a weekly `CronJob` that runs the report **up to the gate** and stops, an idle
   approver pod to `kubectl exec` the `--resume`, a PVC for state and reports, kustomize.
   `deploy/k8s/README.md` explains why the CronJob does not use `--no-gate`. CI renders the
-  manifests; this repo has not been applied to a live cluster.
+  manifests. Verified on a local kind cluster on 30 Sep 2026: the job paused at the gate, an
+  approve from the approver pod published the report to the PVC and wrote the audit row. Never
+  claimed as a production deployment.
 * `.github/workflows/ci.yml`: pytest on 3.12 and 3.13, the golden-report eval, ruff, docker
   build + smoke run, kustomize render.
 
