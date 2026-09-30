@@ -8,14 +8,15 @@ on a local model with no network.
 ## Layout
 
 ```
-agentic_reporting/     the package (spec, data, draft, check, graph, render, audit, run)
+agentic_reporting/     the package (spec, data, draft, check, graph, render, audit, run;
+                       schema_graph + sql_writer + ask = question → linked schema subset → SQL → read-only result)
 agentic_reporting/providers/   Provider protocol + fake, anthropic, bedrock, ollama
-specs/                 report templates (YAML): sales_mbr, ops_weekly
+specs/                 report templates (YAML): sales_mbr, ops_weekly; metrics.yaml = governed metric definitions
 samples/               SYNTHETIC data generators (seeded); *.sqlite are git-ignored
-eval/                  report_eval.py + datasets/golden/*.json (the CI gate)
+eval/                  report_eval.py + schema_linking_eval.py + datasets/golden/*.json (both are CI gates)
 tests/                 pytest, offline only (fake providers, socket-patched private mode)
 deploy/k8s/            CronJob (runs to the gate) + approver pod + PVC, kustomize
-docs/                  architecture.md, adr/0001-0004
+docs/                  architecture.md, adr/0001-0005 (0005 = schema graph: the graph holds the map, the warehouse holds the rows)
 ```
 
 ## Commands
@@ -27,6 +28,7 @@ make demo                          # pauses at the gate; prints the thread
 make resume THREAD=<t> DECISION=approve
 make list                          # audit rows + open threads
 make demo-private                  # needs `ollama serve`; exits 0 with a hint if absent
+make demo-ask                      # question → schema graph → SQL → rows (fake SQL writer answers the 10 golden questions only)
 ```
 
 Run anything that could reach a model with `ANTHROPIC_API_KEY= LOGFIRE_TOKEN=` prefixed
@@ -38,5 +40,8 @@ unless a real call is intended. No key set = the offline `fake` provider.
   no test, say "shape" or "not yet" instead. Never call a demo a product.
 * Data in `samples/` is synthetic and labelled so. Never commit real data or `.env`.
 * Specs are code: new computation goes in the spec's SQL, never in a prompt.
+* Generated SQL (ask.py) runs only over the tables the schema graph linked (SQLite authorizer); the
+  fake SQL writer is hand-written SQL for the golden questions, so the offline eval proves the
+  pipeline, not a model's SQL accuracy. Say so.
 * Keep `check.py` deterministic. No LLM in the checker, ever.
 * Ruff clean (`ruff check .`), tests offline. Commit messages end with the co-author line.
