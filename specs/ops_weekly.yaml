@@ -1,0 +1,67 @@
+# IT-ops weekly over samples/ops.sqlite (SYNTHETIC data). "The week" is the last seven
+# days that have data, computed in SQL, so the report is reproducible on any date.
+title: IT operations weekly
+description: Incidents by severity, time to restore, and the most affected services.
+db: samples/ops.sqlite
+sections:
+  - id: summary
+    heading: Summary
+    sql: |
+      WITH bounds AS (
+        SELECT date(MAX(opened_at), '-6 days') AS week_start, date(MAX(opened_at)) AS week_end
+        FROM incidents)
+      SELECT b.week_end AS week_ending,
+             SUM(date(i.opened_at) BETWEEN b.week_start AND b.week_end) AS incidents,
+             SUM(date(i.opened_at) BETWEEN date(b.week_start, '-7 days')
+                                       AND date(b.week_start, '-1 days')) AS prior_week_incidents,
+             SUM(date(i.opened_at) BETWEEN b.week_start AND b.week_end
+                 AND i.severity = 'SEV1') AS sev1_incidents
+      FROM incidents AS i, bounds AS b
+    prompt: >-
+      Write a two sentence summary of the week: how many incidents, how that compares
+      with the prior week, and how many were SEV1.
+    max_words: 70
+
+  - id: incidents_by_severity
+    heading: Incidents by severity
+    sql: |
+      WITH bounds AS (
+        SELECT date(MAX(opened_at), '-6 days') AS week_start, date(MAX(opened_at)) AS week_end
+        FROM incidents)
+      SELECT severity, COUNT(*) AS incidents
+      FROM incidents, bounds
+      WHERE date(opened_at) BETWEEN week_start AND week_end
+      GROUP BY severity ORDER BY severity
+    prompt: Give the count of incidents at each severity this week, worst first.
+    max_words: 80
+
+  - id: mttr
+    heading: Mean time to restore
+    sql: |
+      WITH bounds AS (
+        SELECT date(MAX(opened_at), '-6 days') AS week_start, date(MAX(opened_at)) AS week_end
+        FROM incidents)
+      SELECT severity, ROUND(AVG(minutes_to_restore), 1) AS mttr_minutes,
+             MAX(minutes_to_restore) AS worst_minutes
+      FROM incidents, bounds
+      WHERE date(opened_at) BETWEEN week_start AND week_end
+      GROUP BY severity ORDER BY severity
+    prompt: >-
+      Report the mean time to restore (MTTR) in minutes for each severity this week and
+      the worst single incident at each severity.
+    max_words: 100
+
+  - id: top_services
+    heading: Most affected services
+    sql: |
+      WITH bounds AS (
+        SELECT date(MAX(opened_at), '-6 days') AS week_start, date(MAX(opened_at)) AS week_end
+        FROM incidents)
+      SELECT service, COUNT(*) AS incidents, SUM(minutes_to_restore) AS minutes_to_restore
+      FROM incidents, bounds
+      WHERE date(opened_at) BETWEEN week_start AND week_end
+      GROUP BY service ORDER BY incidents DESC, minutes_to_restore DESC LIMIT 5
+    prompt: >-
+      Name the five services with the most incidents this week and the total minutes
+      spent restoring each.
+    max_words: 100

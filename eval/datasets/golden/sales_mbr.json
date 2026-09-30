@@ -1,0 +1,14 @@
+{
+  "spec": "specs/sales_mbr.yaml",
+  "sample": "sales",
+  "sections": [
+    {"id": "summary", "heading": "Summary",
+     "required_fact_prefixes": ["revenue[", "prior_month_revenue[", "change_pct[", "orders["]},
+    {"id": "revenue_by_region", "heading": "Revenue by region",
+     "required_fact_prefixes": ["revenue[", "units["]},
+    {"id": "top_products", "heading": "Top products",
+     "required_fact_prefixes": ["revenue["]},
+    {"id": "month_on_month", "heading": "Month-on-month change",
+     "required_fact_prefixes": ["revenue[", "change_pct["]}
+  ]
+}

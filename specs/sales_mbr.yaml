@@ -1,0 +1,66 @@
+# Monthly business review over samples/sales.sqlite (SYNTHETIC data).
+# Every section is one read-only SELECT plus a drafting instruction. The model sees only
+# the rows its own query returned; the checker rejects any number not in those rows.
+title: Monthly business review (sales)
+description: Latest month by region and product, the six-month trend, and a summary.
+db: samples/sales.sqlite
+sections:
+  - id: summary
+    heading: Summary
+    sql: |
+      WITH monthly AS (
+        SELECT substr(order_date, 1, 7) AS month, ROUND(SUM(revenue), 2) AS revenue,
+               COUNT(*) AS orders
+        FROM orders GROUP BY month),
+      ranked AS (
+        SELECT month, revenue, orders, ROW_NUMBER() OVER (ORDER BY month DESC) AS rn
+        FROM monthly)
+      SELECT cur.month AS month, cur.revenue AS revenue,
+             prev.revenue AS prior_month_revenue,
+             ROUND(100.0 * (cur.revenue - prev.revenue) / prev.revenue, 1) AS change_pct,
+             cur.orders AS orders
+      FROM ranked AS cur JOIN ranked AS prev ON cur.rn = 1 AND prev.rn = 2
+    prompt: >-
+      Write a two or three sentence executive summary of the latest month: total revenue,
+      the change against the prior month in percent, and the number of orders.
+    max_words: 80
+
+  - id: revenue_by_region
+    heading: Revenue by region
+    sql: |
+      WITH latest AS (SELECT MAX(substr(order_date, 1, 7)) AS m FROM orders)
+      SELECT region, ROUND(SUM(revenue), 2) AS revenue, SUM(units) AS units,
+             COUNT(*) AS orders
+      FROM orders JOIN latest ON substr(order_date, 1, 7) = latest.m
+      GROUP BY region ORDER BY revenue DESC
+    prompt: >-
+      For the latest month, say which region led on revenue and how the other regions
+      compare. Mention units where it helps.
+    max_words: 110
+
+  - id: top_products
+    heading: Top products
+    sql: |
+      WITH latest AS (SELECT MAX(substr(order_date, 1, 7)) AS m FROM orders)
+      SELECT product, ROUND(SUM(revenue), 2) AS revenue, SUM(units) AS units
+      FROM orders JOIN latest ON substr(order_date, 1, 7) = latest.m
+      GROUP BY product ORDER BY revenue DESC LIMIT 5
+    prompt: >-
+      List the five best-selling products of the latest month by revenue, in order,
+      in flowing prose.
+    max_words: 110
+
+  - id: month_on_month
+    heading: Month-on-month change
+    sql: |
+      WITH monthly AS (
+        SELECT substr(order_date, 1, 7) AS month, ROUND(SUM(revenue), 2) AS revenue
+        FROM orders GROUP BY month)
+      SELECT month, revenue,
+             ROUND(100.0 * (revenue - LAG(revenue) OVER (ORDER BY month))
+                   / LAG(revenue) OVER (ORDER BY month), 1) AS change_pct
+      FROM monthly ORDER BY month
+    prompt: >-
+      Describe the six-month revenue trend: the best and worst months and the
+      month-on-month changes in percent.
+    max_words: 130

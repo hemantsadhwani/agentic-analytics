@@ -1,0 +1,14 @@
+{
+  "spec": "specs/ops_weekly.yaml",
+  "sample": "ops",
+  "sections": [
+    {"id": "summary", "heading": "Summary",
+     "required_fact_prefixes": ["incidents[", "prior_week_incidents["]},
+    {"id": "incidents_by_severity", "heading": "Incidents by severity",
+     "required_fact_prefixes": ["incidents["]},
+    {"id": "mttr", "heading": "Mean time to restore",
+     "required_fact_prefixes": ["mttr_minutes["]},
+    {"id": "top_services", "heading": "Most affected services",
+     "required_fact_prefixes": ["incidents[", "minutes_to_restore["]}
+  ]
+}
