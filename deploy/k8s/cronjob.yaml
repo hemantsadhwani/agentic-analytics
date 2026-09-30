@@ -1,0 +1,60 @@
+# Weekly: run the sales MBR up to the human gate, then stop. The pod exits 0 with
+# "PAUSED thread=<t> (publish?)" in its log. Nothing is published until a person approves
+# from the approver pod (see README.md in this folder). The gate is NOT skipped here:
+# --no-gate would auto-publish unreviewed text, which defeats the point of the pipeline.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: agentic-reporting-sales-mbr
+spec:
+  schedule: "0 6 * * 1"            # Mondays 06:00 (cluster time zone)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: reporter
+              image: agentic-reporting:0.1.0
+              imagePullPolicy: IfNotPresent
+              args:
+                - --spec=specs/sales_mbr.yaml
+                - --db=samples/sales.sqlite    # replace with your mounted read-only data source
+                - --out=/data/reports
+                - --checkpoint-db=/data/state/checkpoints.sqlite
+                - --max-usd=0.50
+              envFrom:
+                - configMapRef:
+                    name: agentic-reporting-config
+                - secretRef:
+                    name: agentic-reporting-secrets
+                    optional: true
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests: {cpu: 100m, memory: 256Mi}
+                limits: {cpu: 500m, memory: 512Mi}
+              volumeMounts:
+                - {name: data, mountPath: /data}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: agentic-reporting-data
+            - name: tmp
+              emptyDir: {}

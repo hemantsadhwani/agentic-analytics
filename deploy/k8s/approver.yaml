@@ -1,0 +1,52 @@
+# A long-lived, idle pod on the same volume, so a human can list and answer paused runs:
+#   kubectl exec deploy/agentic-reporting-approver -- python -m agentic_reporting.run --list
+#   kubectl exec deploy/agentic-reporting-approver -- env REPORT_APPROVER=alice \
+#     python -m agentic_reporting.run --resume --thread <t> --decision approve
+# It runs `sleep infinity`; it has no Service and listens on nothing.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-reporting-approver
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: agentic-reporting-approver}
+  template:
+    metadata:
+      labels: {app: agentic-reporting-approver}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: approver
+          image: agentic-reporting:0.1.0
+          imagePullPolicy: IfNotPresent
+          command: ["sleep", "infinity"]
+          envFrom:
+            - configMapRef:
+                name: agentic-reporting-config
+            - secretRef:
+                name: agentic-reporting-secrets
+                optional: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: agentic-reporting-data
+        - name: tmp
+          emptyDir: {}

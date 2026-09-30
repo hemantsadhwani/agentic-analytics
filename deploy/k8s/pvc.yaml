@@ -1,0 +1,14 @@
+# One volume holds the durable state: the checkpoint + audit SQLite and the published reports.
+# ReadWriteOnce is enough on a single-node cluster. On a multi-node cluster the CronJob pod
+# and the approver pod may land on different nodes: use a ReadWriteMany storage class
+# (EFS, Filestore, Azure Files, NFS) or pin both to one node. SQLite on network storage is
+# fine at this write rate (a few writes per report), not for heavy concurrency.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agentic-reporting-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentic-reporting-config
+data:
+  LLM_PROVIDER: "fake"                 # fake | anthropic | bedrock | ollama
+  OLLAMA_HOST: "http://ollama:11434"   # only used when LLM_PROVIDER=ollama
+  OLLAMA_MODEL: "qwen2.5:7b-instruct"
+  AWS_REGION: "us-east-1"              # only used when LLM_PROVIDER=bedrock
+  REPORT_CHECKPOINT_DB: "/data/state/checkpoints.sqlite"
+  REPORT_APPROVER: "k8s-approver"      # override per person: REPORT_APPROVER=alice ... --resume

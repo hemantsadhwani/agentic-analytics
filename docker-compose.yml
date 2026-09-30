@@ -1,0 +1,35 @@
+# Private mode in two containers: the reporter talks only to the local Ollama service.
+#
+#   docker compose up -d ollama
+#   docker compose exec ollama ollama pull qwen2.5:7b-instruct
+#   docker compose run --rm reporter --provider ollama --spec specs/sales_mbr.yaml --db samples/sales.sqlite
+#   docker compose run --rm reporter --resume --thread <thread> --decision approve
+#   docker compose run --rm reporter --list
+services:
+  reporter:
+    build: .
+    image: agentic-reporting:0.1.0
+    environment:
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b-instruct}
+      REPORT_APPROVER: ${REPORT_APPROVER:-compose-user}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      - reports:/app/reports
+      - state:/app/.agentic_reporting
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - models:/root/.ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+
+volumes:
+  reports:
+  state:
+  models:
