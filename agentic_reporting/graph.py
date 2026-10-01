@@ -301,6 +301,7 @@ def build_graph(checkpointer=None, provider: Any = None):
 
 
 def config(thread: str) -> dict[str, Any]:
-    """Run config for a thread. The draft loop is one step per section, so lift the
-    default recursion limit (25) well above any reasonable section count."""
+    """Run config for a thread. The draft loop is one step per section, so set an explicit
+    recursion limit well above any reasonable section count. Explicit, because the library
+    default changed across the pinned range (25 in early langgraph 1.0, 10,000+ from 1.1)."""
     return {"configurable": {"thread_id": thread}, "recursion_limit": 200}
