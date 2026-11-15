@@ -30,8 +30,9 @@ Rules, in order of importance:
    trailing decimals only if the result stays within 0.5% of the fact).
 2. Cite every number you write in numbers_used, as {"value": <number>, "fact_key": "<key>"},
    using the exact key from the facts table (for example "revenue[0]").
-3. Write no other digits at all. Spell small counts that are not facts in words ("three
-   regions", not "3 regions"). Do not number your sentences. Do not write fact keys in the text.
+3. Write no other digits at all. Spell small counts under twenty that are not facts in
+   words ("three regions", not "3 regions"). Every other number, digits or words, is
+   checked. Do not number your sentences. Do not write fact keys in the text.
 4. Dates and years may be written only as they appear in the rows.
 5. Stay within the word limit. Plain English, no headings, no bullet lists, no markdown tables.
 
@@ -66,8 +67,9 @@ def user_message(section: dict[str, Any], query: dict[str, Any],
             "",
             f"{REPAIR_MARKER} your previous draft was rejected by the number checker.",
             f"Previous draft: {previous or ''}",
-            f"These numbers are not in the facts table: {json.dumps(unsupported)}.",
-            "Rewrite the section using only numbers from the facts table, or no number at all.",
+            f"The checker rejected: {json.dumps(unsupported)}.",
+            "Rewrite the section using only numbers from the facts table, or no number at all,",
+            "and cite every number you write in numbers_used with its exact fact key.",
         ]
     parts += ["", "Return the JSON object only."]
     return "\n".join(parts)

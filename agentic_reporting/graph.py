@@ -37,7 +37,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import RetryPolicy, interrupt
 
 from agentic_reporting import audit
-from agentic_reporting.check import check_section
+from agentic_reporting.check import check_section, row_labels
 from agentic_reporting.data import run_query
 from agentic_reporting.draft import draft_section
 from agentic_reporting.render import render
@@ -158,12 +158,18 @@ def check_node(state: ReportState) -> dict[str, Any]:
         if d is None:
             continue
         checks[sid] = check_section(d["text"], q["facts"], q["dates_ok"],
-                                    d.get("numbers_used")).to_dict()
+                                    d.get("numbers_used") or [],
+                                    row_labels(q.get("columns", []), q.get("rows", []))).to_dict()
     return {"checks": checks}
 
 
+def _problems(c: dict[str, Any]) -> list[str]:
+    return ([*c["unsupported"]] + [f"{t} (not cited)" for t in c.get("uncited", [])]
+            + [f"citation {b} does not match its fact" for b in c.get("bad_citations", [])])
+
+
 def repair_node(state: ReportState, provider: Any = None) -> dict[str, Any]:
-    failing = {sid: c["unsupported"] for sid, c in state["checks"].items() if not c["ok"]}
+    failing = {sid: _problems(c) for sid, c in state["checks"].items() if not c["ok"]}
     out = _draft_many(state, provider, list(failing), failing)
     out["repairs_left"] = state.get("repairs_left", 0) - 1
     out["repaired"] = [*state.get("repaired", []), *failing]
@@ -173,6 +179,17 @@ def repair_node(state: ReportState, provider: Any = None) -> dict[str, Any]:
 def unsupported_by_section(state: ReportState) -> dict[str, list[str]]:
     return {sid: c["unsupported"] for sid, c in state.get("checks", {}).items()
             if c["unsupported"]}
+
+
+def failing_by_section(state: ReportState) -> dict[str, list[str]]:
+    """Every reason a section fails: unsupported, uncited, or a citation that lies."""
+    return {sid: _problems(c) for sid, c in state.get("checks", {}).items() if not c["ok"]}
+
+
+def warnings_by_section(state: ReportState) -> dict[str, list[str]]:
+    """Attribution hints for the reviewer: true numbers whose column or row is not named."""
+    return {sid: c["warnings"] for sid, c in state.get("checks", {}).items()
+            if c.get("warnings")}
 
 
 def gate_node(state: ReportState) -> dict[str, Any]:
@@ -185,6 +202,9 @@ def gate_node(state: ReportState) -> dict[str, Any]:
     answer = interrupt({
         "report_preview": preview,
         "unsupported": unsupported_by_section(state),
+        "citation_problems": {sid: p for sid, p in failing_by_section(state).items()
+                              if p != unsupported_by_section(state).get(sid)},
+        "attribution_warnings": warnings_by_section(state),
         "draft_failures": state.get("draft_failures", {}),
         "question": "publish?",
     })
@@ -247,7 +267,7 @@ def route_after_draft(state: ReportState) -> str:
 
 
 def route_after_check(state: ReportState) -> str:
-    if unsupported_by_section(state) and state.get("repairs_left", 0) > 0:
+    if failing_by_section(state) and state.get("repairs_left", 0) > 0:
         return "repair"
     return "gate"
 

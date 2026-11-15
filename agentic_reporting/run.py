@@ -35,8 +35,10 @@ from agentic_reporting.graph import (
     DEFAULT_OUT,
     build_graph,
     config,
+    failing_by_section,
     initial_state,
     unsupported_by_section,
+    warnings_by_section,
 )
 from agentic_reporting.providers.router import PROVIDERS, resolve_name
 from agentic_reporting.render import render
@@ -118,6 +120,14 @@ def _outcome(graph, cfg, thread: str, db: str) -> int:
         unsupported = unsupported_by_section(state)
         print(f"  unsupported: {unsupported or 'none'}"
               + ("  (will publish as [unverified] if approved)" if unsupported else ""))
+        cites = {s: [p for p in ps if p not in unsupported.get(s, [])]
+                 for s, ps in failing_by_section(state).items()}
+        cites = {s: ps for s, ps in cites.items() if ps}
+        if cites:
+            print(f"  citation problems after repair: {cites}")
+        for sid, ws in warnings_by_section(state).items():
+            for w in ws:
+                print(f"  check meaning [{sid}]: {w}")
         if state.get("draft_failures"):
             print(f"  not drafted: {state['draft_failures']}")
         db_flag = "" if db == str(DEFAULT_CHECKPOINT_DB) else f" --checkpoint-db {db}"

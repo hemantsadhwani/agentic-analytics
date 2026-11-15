@@ -35,3 +35,31 @@ not by the model.
   report needs a derived number, the spec's SQL computes it.
 * Tests: `tests/test_check.py`; the eval's `fabricate-once` / `fabricate-always` runs prove
   the repair and `[unverified]` paths (`eval/report_eval.py`).
+
+## Amendment, 2026-11-12: checker v2 (probes and mutation testing)
+
+A self-audit ran hand-written sentences against v1 and found escapes and false positives.
+Every probe is now a regression test (`tests/test_check_probes.py`).
+
+* **Escapes closed.** Scaled numbers (`112k`, `1.2M`, `0.11 million`, `1.1 lakh`, `2 crore`),
+  multipliers (`3x`), units (`250ms`), number words (`one hundred and sixty`,
+  `twelve thousand`, `three times`) and impossible dates (`2026-13`) are now checked. Small
+  counts under twenty in words stay allowed, because the prompt asks for them.
+* **False positives fixed.** Direction words set the sign (`fell 9.8%` = -9.8, and `rose 9.8%`
+  against -9.8 now fails). Indian grouping (`1,11,850.2`) parses. Percentages and scaled
+  numbers may be the fact rounded to the written precision (`-10%` for -9.8), capped at 5% of
+  the fact so a coarse token cannot borrow another fact (`1k` is not 699).
+* **Citations enforced.** With the model's `numbers_used`, every number must be cited by a
+  key whose value it matches, and every citation must match its fact. Uncited numbers and
+  bad citations fail the section and go to the repair call. Before v2 they were recorded
+  and ignored.
+* **Attribution hints.** A true number whose cited column, or (multi-row results) whose row
+  label, is not named in its sentence produces a warning shown at the gate. It is a hint, not
+  proof: meaning stays the reviewer's job.
+* **Mutation test.** `tests/test_check_mutation.py` corrupts every number of an honest section
+  53 ways (scale, digit swap, sign or direction flip, `k` suffix, number words). Every mutant
+  more than 0.5% from the truth is rejected; the ones within 0.5% are equivalent by the
+  tolerance rule and counted, not hidden.
+
+Still not caught, by design: `twice`, `half`, `doubled`, `a third`; a true number in a false
+sentence when its column and row are both named.

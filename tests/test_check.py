@@ -30,10 +30,13 @@ def test_tolerance_is_half_a_percent():
 
 
 def test_percent_matches_either_scale():
-    assert unsupported("down 9.8% on the month") == ["9.8%"]   # sign matters: fact is -9.8
-    assert unsupported("down -9.8% on the month") == []
-    assert unsupported("a 12.5% share") == []                  # 12.5% == 0.125
-    assert unsupported("a 13% share") == ["13%"]
+    assert unsupported("change 9.8% on the month") == ["9.8%"]  # sign matters: fact is -9.8
+    assert unsupported("down 9.8% on the month") == []          # direction word sets the sign
+    assert unsupported("up 9.8% on the month") == ["9.8%"]      # ... and catches the wrong one
+    assert unsupported("down -9.8% on the month") == []         # explicit sign wins
+    assert unsupported("a 12.5% share") == []                   # 12.5% == 0.125
+    assert unsupported("a 13% share") == []                     # 12.5 rounded to whole %
+    assert unsupported("a 14% share") == ["14%"]
 
 
 def test_years_only_when_the_query_returned_them():
@@ -48,10 +51,20 @@ def test_identifiers_list_markers_and_citations_are_not_numbers():
     assert check_section(text, {}).numbers_checked == 0
 
 
-def test_bad_citation_reported_separately():
+def test_bad_citation_fails_the_section():
     r = check_section("units 155", FACTS, numbers_used=[{"value": 156, "fact_key": "units[0]"},
                                                          {"value": 1, "fact_key": "nope[0]"}])
-    assert r.ok and r.bad_citations == ["units[0]=156", "nope[0]=1"]
+    assert not r.ok and r.bad_citations == ["units[0]=156", "nope[0]=1"]
+    assert r.uncited == ["155"]            # the only citation for 155 was wrong
+
+
+def test_citations_are_enforced_when_given():
+    good = [{"value": 155, "fact_key": "units[0]"}]
+    assert check_section("units 155", FACTS, numbers_used=good).ok
+    r = check_section("units 155", FACTS, numbers_used=[])
+    assert not r.ok and r.uncited == ["155"] and r.unsupported == []
+    assert "155 (not cited)" in r.problems()
+    assert check_section("units 155", FACTS).ok      # None = enforcement off (unit use)
 
 
 def test_redact_replaces_only_unsupported():

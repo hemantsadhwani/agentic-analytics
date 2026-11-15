@@ -19,9 +19,12 @@ unreliable numbers. This repo splits the two jobs:
 2. For each section the model sees **only the rows its query returned** and must cite the
    fact key (`revenue[0]`) of every number it writes.
 3. A **checker with no LLM in it** (`check.py`, regex plus arithmetic) matches every number
-   in the text against that section's facts, within 0.5%. A miss triggers one repair call.
-   Anything still unsupported is shown to the reviewer and, if published, replaced with
-   `[unverified]`.
+   in the text against that section's facts, within 0.5%, including `112k`, `1.1 lakh`,
+   `3x` and number words. Citations are enforced: an uncited number or a citation that does
+   not match its fact fails the section too. A miss triggers one repair call. Anything still
+   unsupported is shown to the reviewer and, if published, replaced with `[unverified]`.
+   True numbers whose column or row is not named in their sentence are flagged for the
+   reviewer.
 4. The run **pauses** for a human. Approve writes `reports/<spec>/<date>.md`; reject writes
    nothing. Both write one **audit row**: who, when, spec version, model, cost, how many
    numbers were checked.
@@ -32,7 +35,7 @@ unreliable numbers. This repo splits the two jobs:
 |---|---|---|
 | Template as code | Reports are YAML specs in git; unknown keys are errors | `specs/`, `agentic_reporting/spec.py`, `tests/test_spec.py` |
 | SQL contract per section | One `SELECT` per section; refused at load if it could write; DB opened `mode=ro` + `query_only`; 200-row cap | `spec.py`, `data.py`, `tests/test_spec.py`, `tests/test_data.py` |
-| No free-text numbers | Every number must match a query cell (0.5%); one repair; else `[unverified]` | `check.py`, `render.py`, `tests/test_check.py`, `tests/test_graph.py` |
+| No free-text numbers | Every number must match a query cell (0.5%) and be cited; one repair; else `[unverified]`. Every audit probe pinned; a mutation test rejects 46/46 non-equivalent corruptions | `check.py`, `render.py`, `tests/test_check.py`, `tests/test_check_probes.py`, `tests/test_check_mutation.py`, `tests/test_graph.py` |
 | Human publish gate | LangGraph `interrupt()`; resume from any process, any day | `graph.py`, `tests/test_graph.py`, `tests/test_cli.py` |
 | Audit row | One row per approve/reject/auto-publish, idempotent on replay | `audit.py`, `tests/test_graph.py` |
 | Version hash | sha256 of the spec bytes, in the report footer and the audit row | `spec.py`, `tests/test_spec.py` |
@@ -260,8 +263,9 @@ reads an unlinked table; CI fails if a golden question links or answers wrongly.
   nothing until someone adds a synonym;
 * the schema eval runs hand-written fake SQL only: no real-model text-to-SQL accuracy is
   measured or claimed;
-* the checker cannot catch a wrong sentence built from true numbers, or an invented number
-  that happens to fall within 0.5% of a fact in the same section. That is the reviewer's job.
+* the checker cannot prove a sentence built from true numbers is true: it flags a number
+  whose column or row is not named nearby, but meaning is the reviewer's job. An invented
+  number within 0.5% of a fact in the same section passes; so do `twice`, `half`, `doubled`.
 
 ## Layout and docs
 
