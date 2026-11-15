@@ -12,8 +12,12 @@ agentic_reporting/     the package (spec, data, draft, check, graph, render, aud
                        schema_graph + sql_writer + ask = question → linked schema subset → SQL → read-only result)
 agentic_reporting/providers/   Provider protocol + fake, anthropic, bedrock, ollama
 specs/                 report templates (YAML): sales_mbr, ops_weekly; metrics.yaml = governed metric definitions
-samples/               SYNTHETIC data generators (seeded); *.sqlite are git-ignored
-eval/                  report_eval.py + schema_linking_eval.py + datasets/golden/*.json (both are CI gates)
+samples/               SYNTHETIC data generators (seeded); *.sqlite are git-ignored;
+                       load_adventureworks.py = Microsoft AdventureWorks DW (MIT), pinned commit +
+                       sha256 per file, no customer PII; cache in samples/.cache/ (git-ignored)
+eval/                  report_eval.py + schema_linking_eval.py + datasets/golden/*.json (both are CI gates);
+                       model_bench.py = real Bedrock calls, picks the model by cost per passing report
+                       (NOT a CI gate; results committed in eval/results/)
 tests/                 pytest, offline only (fake providers, socket-patched private mode)
 deploy/k8s/            CronJob (runs to the gate) + approver pod + PVC, kustomize
 docs/                  architecture.md, adr/0001-0005 (0005 = schema graph: the graph holds the map, the warehouse holds the rows)

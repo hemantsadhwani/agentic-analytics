@@ -1,0 +1,317 @@
+{
+  "run_at": "2026-11-15T13:46:44+00:00",
+  "region": "ap-south-1",
+  "pricing": "AWS Price List API, ap-south-1, read 2026-11-15",
+  "repeats": 3,
+  "results": [
+    {
+      "model": "google.gemma-3-4b-it",
+      "reports": 6,
+      "reports_passed": 3,
+      "sections": 24,
+      "first_draft_pass": 24,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 36,
+      "required_facts": 45,
+      "required_facts_covered": 42,
+      "warning_samples": [
+        "specs/ops_weekly.yaml:summary: 0 is sev1_incidents[0], but 'sev1_incidents' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 124013.2 is revenue[4], but its row (2026-08) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 105965.2 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/ops_weekly.yaml:summary: 0 is sev1_incidents[0], but 'sev1_incidents' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 124013.2 is revenue[4], but its row (2026-08) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 105965.2 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/ops_weekly.yaml:summary: 0 is sev1_incidents[0], but 'sev1_incidents' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence"
+      ],
+      "calls": 24,
+      "tokens_in": 12630,
+      "tokens_out": 5253,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.001104,
+      "usd_per_passing_report": 0.000368,
+      "seconds": 24.9,
+      "errors": [],
+      "problems": [
+        {
+          "spec": "specs/sales_mbr.yaml",
+          "missing_facts": [
+            "revenue_by_region:units["
+          ]
+        },
+        {
+          "spec": "specs/sales_mbr.yaml",
+          "missing_facts": [
+            "revenue_by_region:units["
+          ]
+        },
+        {
+          "spec": "specs/sales_mbr.yaml",
+          "missing_facts": [
+            "revenue_by_region:units["
+          ]
+        }
+      ]
+    },
+    {
+      "model": "google.gemma-3-12b-it",
+      "reports": 6,
+      "reports_passed": 6,
+      "sections": 24,
+      "first_draft_pass": 24,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 10,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 11419.0 is revenue[3], but 'revenue' is not named in its sentence"
+      ],
+      "calls": 24,
+      "tokens_in": 12630,
+      "tokens_out": 6194,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.003495,
+      "usd_per_passing_report": 0.000583,
+      "seconds": 46.7,
+      "errors": [],
+      "problems": []
+    },
+    {
+      "model": "mistral.ministral-3-8b-instruct",
+      "reports": 6,
+      "reports_passed": 6,
+      "sections": 24,
+      "first_draft_pass": 21,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 27,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/sales_mbr.yaml:top_products: 15776 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 18.2 is change_pct[2], but its row (2026-06) is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 15776 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 18.2 is change_pct[2], but its row (2026-06) is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 15776 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 18.2 is change_pct[2], but its row (2026-06) is not named in its sentence"
+      ],
+      "calls": 27,
+      "tokens_in": 18018,
+      "tokens_out": 6053,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.004333,
+      "usd_per_passing_report": 0.000722,
+      "seconds": 19.5,
+      "errors": [],
+      "problems": []
+    },
+    {
+      "model": "mistral.ministral-3-14b-instruct",
+      "reports": 6,
+      "reports_passed": 6,
+      "sections": 24,
+      "first_draft_pass": 21,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 9,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/sales_mbr.yaml:top_products: 15776.0 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 15776.0 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 15776.0 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence"
+      ],
+      "calls": 27,
+      "tokens_in": 17957,
+      "tokens_out": 6587,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.005891,
+      "usd_per_passing_report": 0.000982,
+      "seconds": 28.2,
+      "errors": [],
+      "problems": []
+    },
+    {
+      "model": "nvidia.nemotron-nano-3-30b",
+      "reports": 6,
+      "reports_passed": 6,
+      "sections": 24,
+      "first_draft_pass": 21,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 36,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/ops_weekly.yaml:incidents_by_severity: 12 is incidents[2], but 'incidents' is not named in its sentence",
+        "specs/ops_weekly.yaml:incidents_by_severity: 6 is incidents[1], but 'incidents' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 percent is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/ops_weekly.yaml:incidents_by_severity: 12 is incidents[2], but 'incidents' is not named in its sentence",
+        "specs/ops_weekly.yaml:incidents_by_severity: 6 is incidents[1], but 'incidents' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 percent is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 105965.2 is revenue[2], but its row (2026-06) is not named in its sentence"
+      ],
+      "calls": 27,
+      "tokens_in": 23714,
+      "tokens_out": 5962,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.003329,
+      "usd_per_passing_report": 0.000555,
+      "seconds": 20.7,
+      "errors": [],
+      "problems": []
+    },
+    {
+      "model": "qwen.qwen3-32b-v1:0",
+      "reports": 6,
+      "reports_passed": 6,
+      "sections": 24,
+      "first_draft_pass": 23,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 43,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1% is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 percent is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1% is change_pct[1], but its row (2026-05) is not named in its sentence"
+      ],
+      "calls": 25,
+      "tokens_in": 18264,
+      "tokens_out": 5509,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.007199,
+      "usd_per_passing_report": 0.0012,
+      "seconds": 15.3,
+      "errors": [],
+      "problems": []
+    },
+    {
+      "model": "zai.glm-4.7-flash",
+      "reports": 6,
+      "reports_passed": 5,
+      "sections": 24,
+      "first_draft_pass": 22,
+      "final_pass": 23,
+      "draft_failures": 0,
+      "attribution_warnings": 43,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 percent is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 percent is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1 percent is change_pct[1], but its row (2026-05) is not named in its sentence"
+      ],
+      "calls": 26,
+      "tokens_in": 18101,
+      "tokens_out": 5170,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.00393,
+      "usd_per_passing_report": 0.000786,
+      "seconds": 22.3,
+      "errors": [],
+      "problems": [
+        {
+          "spec": "specs/ops_weekly.yaml",
+          "section": "summary",
+          "unsupported": [
+            "4"
+          ],
+          "uncited": [],
+          "bad_citations": [],
+          "text": "This week's incident count was 22, which is 4 more than the 18 incidents reported in the prior week. There were 0 SEV1 incidents this week."
+        }
+      ]
+    },
+    {
+      "model": "deepseek.v3.2",
+      "reports": 6,
+      "reports_passed": 6,
+      "sections": 24,
+      "first_draft_pass": 24,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 56,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 11419.0 is revenue[3], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1% is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 15776.0 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1% is change_pct[1], but its row (2026-05) is not named in its sentence"
+      ],
+      "calls": 24,
+      "tokens_in": 20349,
+      "tokens_out": 4681,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.02545,
+      "usd_per_passing_report": 0.004242,
+      "seconds": 52.6,
+      "errors": [],
+      "problems": []
+    }
+  ]
+}
