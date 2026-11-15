@@ -41,7 +41,7 @@ unreliable numbers. This repo splits the two jobs:
 | Version hash | sha256 of the spec bytes, in the report footer and the audit row | `spec.py`, `tests/test_spec.py` |
 | Golden-report gate | Both specs end to end in CI; a fabricating model must be caught | `eval/report_eval.py`, `.github/workflows/ci.yml` |
 | Costed | `--max-usd` / `--max-llm-calls` checked before each call; cost in footer and audit | `budget.py`, `tests/test_graph.py::test_budget_stops_drafting_and_says_so` |
-| Provider-agnostic | `LLM_PROVIDER=fake\|anthropic\|bedrock\|ollama`, one interface | `providers/`, `tests/test_router.py` |
+| Provider-agnostic | `LLM_PROVIDER=fake\|anthropic\|bedrock\|bedrock-converse\|ollama`, one interface. `bedrock-converse` reaches any Bedrock model; default Gemma 3 12B in `ap-south-1`, chosen by `eval/model_bench.py` (6/6 golden reports, about $0.0006 per report). Unpriced models are refused before any call | `providers/`, `tests/test_router.py`, `tests/test_converse_provider.py`, `eval/results/` |
 | Private mode | Ollama run with every socket connect patched to fail: zero attempts | `tests/test_private_mode.py`, `docker-compose.yml` |
 | Crash-safe | One section per checkpointed step; `--resume` continues without re-drafting | `tests/test_cli.py::test_crash_then_resume_completes_without_redrafting` |
 | Schema graph linking | Deterministic question → tables, join path, governed metric; the model sees only that subset; SQL guarded, read-only, linked tables only | `schema_graph.py`, `sql_writer.py`, `specs/metrics.yaml`, `tests/test_schema_graph.py`, `eval/schema_linking_eval.py` |

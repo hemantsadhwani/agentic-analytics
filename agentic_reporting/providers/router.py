@@ -17,7 +17,7 @@ import sys
 
 from agentic_reporting.providers.base import Provider
 
-PROVIDERS = ("fake", "anthropic", "bedrock", "ollama")
+PROVIDERS = ("fake", "anthropic", "bedrock", "bedrock-converse", "ollama")
 FALLBACK_NOTE = ("note: no LLM_PROVIDER and no ANTHROPIC_API_KEY set; using the offline "
                  "'fake' provider (deterministic, $0, no network)")
 
@@ -51,6 +51,9 @@ def get_provider(name: str | None = None, model: str | None = None) -> Provider:
     if chosen == "bedrock":
         from agentic_reporting.providers.bedrock_provider import BedrockProvider
         return BedrockProvider(model=model)
+    if chosen == "bedrock-converse":
+        from agentic_reporting.providers.converse_provider import BedrockConverseProvider
+        return BedrockConverseProvider(model=model)
     if chosen == "ollama":
         from agentic_reporting.providers.ollama_provider import OllamaProvider
         return OllamaProvider(model=model)
