@@ -1,4 +1,4 @@
-# agentic-reporting
+# agentic-analytics
 
 **Agents draft a report section by section from read-only SQL facts. A deterministic checker
 rejects any number the model did not get from a query. A human approves before it publishes.

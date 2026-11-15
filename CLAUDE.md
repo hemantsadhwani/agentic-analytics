@@ -1,4 +1,4 @@
-# agentic-reporting: context for Claude
+# agentic-analytics (repo; Python package `agentic_reporting`): context for Claude
 
 Public repo. Agents draft a report section by section from read-only SQL facts; a
 deterministic checker rejects any number not returned by a query; a human approves
