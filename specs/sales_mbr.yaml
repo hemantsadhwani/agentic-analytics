@@ -22,7 +22,7 @@ sections:
       FROM ranked AS cur JOIN ranked AS prev ON cur.rn = 1 AND prev.rn = 2
     prompt: >-
       Write a two or three sentence executive summary of the latest month: total revenue,
-      the change against the prior month in percent, and the number of orders.
+      the prior month's revenue, the change in percent, and the number of orders.
     max_words: 80
 
   - id: revenue_by_region
@@ -35,7 +35,7 @@ sections:
       GROUP BY region ORDER BY revenue DESC
     prompt: >-
       For the latest month, say which region led on revenue and how the other regions
-      compare. Mention units where it helps.
+      compare. Give each region's revenue and units.
     max_words: 110
 
   - id: top_products
@@ -61,6 +61,6 @@ sections:
                    / LAG(revenue) OVER (ORDER BY month), 1) AS change_pct
       FROM monthly ORDER BY month
     prompt: >-
-      Describe the six-month revenue trend: the best and worst months and the
-      month-on-month changes in percent.
+      Describe the six-month revenue trend: the best and worst months with their revenue,
+      and the month-on-month changes in percent.
     max_words: 130

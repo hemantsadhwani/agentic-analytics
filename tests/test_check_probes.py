@@ -43,13 +43,22 @@ PROBES = [
     ("Orders were one hundred and seventy.", False, ["one hundred and seventy"], 1),
     ("Orders were twelve thousand.", False, ["twelve thousand"], 1),
     ("Revenue grew three times.", False, ["three times"], 1),
-    ("Three regions reported.", True, [], 0),                      # allowed by the prompt
+    ("Three regions reported.", False, ["Three"], 1),              # every count is checked
+    ("One of the regions reported.", True, [], 0),                 # a bare "one" is a pronoun
+    ("Orders rose by four on the month.", False, ["four"], 1),     # derived, in words (real run)
     ("Change was -10%.", True, [], 1),                             # rounding of -9.8
     ("Change was -11%.", False, ["-11%"], 1),
     ("Revenue for 2026-13 was 111,850.2.", False, ["2026-13"], 2),  # impossible month
     ("Revenue fell by 12,163.", False, ["12,163"], 1),             # derived: by design
     ("Latency was 250ms.", False, ["250ms"], 1),                   # units are checked
     ("Build 73fc of payments-api v2 shipped on the 3rd.", True, [], 0),  # identifiers
+    # Found by the first real-model run (DeepSeek V3.2 on Bedrock, 2026-11-15):
+    ("Revenue was 111,850.2, a decrease of 9.8% from the prior month.", True, [], 2),
+    ("Revenue was 111,850.2, an increase of 9.8% from the prior month.", False, ["9.8%"], 2),
+    ("For the week ending September 29, 2026 revenue was 111,850.2.", True, [], 1),
+    ("For the week ending 29 Sep 2026 revenue was 111,850.2.", True, [], 1),
+    ("For the week ending September 29, 2031 revenue was 111,850.2.", False,
+     ["September 29, 2031"], 2),
 ]
 
 
@@ -57,6 +66,15 @@ PROBES = [
 def test_probe(text, ok, unsupported, checked):
     r = check(text)
     assert (r.ok, r.unsupported, r.numbers_checked) == (ok, unsupported, checked)
+
+
+def test_row_count_is_a_fact_of_multi_row_results():
+    # "the top five products" when five rows came back (Gemma and Qwen wrote this, 2026-11-15)
+    labels = {i: [f"p{i}"] for i in range(5)}
+    r = check_section("The top five products follow.", {"revenue[0]": 1.0}, [], [], labels)
+    assert r.ok and r.matched == {"five": "row_count"} and r.uncited == []
+    r = check_section("The top six products follow.", {"revenue[0]": 1.0}, [], [], labels)
+    assert r.unsupported == ["six"]
 
 
 def test_true_number_wrong_metric_is_flagged_for_the_reviewer():

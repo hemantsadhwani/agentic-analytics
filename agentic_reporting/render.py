@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from agentic_reporting.check import redact, scan
+from agentic_reporting.check import redact, scan, with_row_count
 from agentic_reporting.data import is_number
 
 MARK = "[unverified]"
@@ -32,7 +32,8 @@ def render(state: dict[str, Any]) -> tuple[str, list[dict[str, str]], int]:
     for sec in spec["sections"]:
         sid = sec["id"]
         q = queries.get(sid, {"facts": {}, "dates_ok": []})
-        facts, dates_ok = q.get("facts", {}), q.get("dates_ok", [])
+        facts = with_row_count(q.get("facts", {}), len(q.get("rows", [])))
+        dates_ok = q.get("dates_ok", [])
         body += [f"## {sec['heading']}", ""]
         d = drafts.get(sid)
         if not d:
@@ -43,7 +44,7 @@ def render(state: dict[str, Any]) -> tuple[str, list[dict[str, str]], int]:
         text, removed = redact(d["text"], facts, dates_ok, MARK)
         unverified += [{"section": sid, "token": t} for t in removed]
         body += [text, ""]
-        used = sorted({h.fact_key for h in hits if h.fact_key},
+        used = sorted({h.fact_key for h in hits if h.fact_key and "[" in h.fact_key},
                       key=lambda k: (k.split("[")[0], int(k.split("[")[1].rstrip("]"))))
         if used:
             sources += [f"### {sec['heading']}", "", "| fact | value |", "|---|---|"]

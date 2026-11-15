@@ -18,8 +18,8 @@ sections:
                  AND i.severity = 'SEV1') AS sev1_incidents
       FROM incidents AS i, bounds AS b
     prompt: >-
-      Write a two sentence summary of the week: how many incidents, how that compares
-      with the prior week, and how many were SEV1.
+      Write a two sentence summary of the week: this week's incident count, the prior
+      week's incident count, and how many were SEV1.
     max_words: 70
 
   - id: incidents_by_severity

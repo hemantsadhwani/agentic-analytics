@@ -14,9 +14,9 @@ What counts as a number (v2, 2026-11):
 * scaled numbers: glued ``112k``, ``1.2M``, ``3bn``, ``2cr``, or spaced ``0.11 million``,
   ``1.1 lakh``, ``2 crore``; lower-case ``m`` may mean million or minutes, both are tried;
 * multipliers and units: ``3x``, ``250ms``, ``4GB`` are checked by their number;
-* number words: ``one hundred and sixty``, ``twelve thousand``, ``twenty-five``. Small
-  counts under twenty in words (``three regions``) are allowed, because the drafting prompt
-  asks for them, unless a multiplier or percent follows (``three times``, ``five percent``).
+* number words: ``one hundred and sixty``, ``twelve thousand``, ``twelve``, ``three times``.
+  Only a bare ``one`` is skipped (``one of the regions``). Until 2026-11-15 words under
+  twenty were skipped; a real-model run showed facts and a derived difference hiding there.
 
 Direction words set the sign of an unsigned number: ``fell 9.8%`` / ``a 9.8% decline`` is
 -9.8, ``rose 9.8%`` is +9.8, so ``up 9.8%`` against a fact of -9.8 fails. An explicit sign
@@ -91,7 +91,15 @@ DIR_AFTER_RE = re.compile(   # noun forms only: "a 9.8% decline", never "111,850
     r"(?i)^\s*(?:(?P<down>declines?|decreases?|drops?|falls?|dips?|reductions?|contractions?)"
     r"|(?P<up>increases?|rises?|gains?|growth|jumps?|improvements?))\b")
 DIRECTION_RE = re.compile(rf"(?i)\b(?:{DOWN}|{UP})\b")
-LEVEL_BEFORE_RE = re.compile(r"(?i)\b(?:to|from|at|of)\s*$")
+# "fell to 111,850" is a level. "a decline of 9.8%" is a change, so "of" is NOT a level word
+# (found by the first real-model run, 2026-11-15: DeepSeek wrote "a decrease of 9.8%").
+LEVEL_BEFORE_RE = re.compile(r"(?i)\b(?:to|from|at)\s*$")
+_MONTHS = ("jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|"
+           "sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?")
+# Natural-language dates: "September 29, 2026", "29 Sep 2026". Checked like ISO dates.
+NATURAL_DATE_RE = re.compile(
+    rf"(?i)\b(?:(?:{_MONTHS})\.?\s+(?P<d1>\d{{1,2}})(?:st|nd|rd|th)?,?\s+(?P<y1>\d{{4}})"
+    rf"|(?P<d2>\d{{1,2}})(?:st|nd|rd|th)?\s+(?:{_MONTHS})\.?,?\s+(?P<y2>\d{{4}}))\b")
 SENTENCE_END_RE = re.compile(r"[.!?](?=\s|$)")
 
 
@@ -234,6 +242,11 @@ def scan(text: str, facts: dict[str, Any], dates_ok: list[int] | None = None,
         masked.append(m.span())
         if int(m.group(1)) not in ok_years or not _valid_date(m):
             hits.append(Hit(m.start(), m.end(), m.group(0), None))
+    for m in NATURAL_DATE_RE.finditer(text):
+        masked.append(m.span())
+        day, year = int(m.group("d1") or m.group("d2")), int(m.group("y1") or m.group("y2"))
+        if year not in ok_years or not 1 <= day <= 31:
+            hits.append(Hit(m.start(), m.end(), m.group(0), None))
     masked += [m.span() for m in LIST_MARKER_RE.finditer(text)]
     masked += [m.span() for m in CITATION_RE.finditer(text)]
     clean = _mask(text, masked)
@@ -261,8 +274,12 @@ def scan(text: str, facts: dict[str, Any], dates_ok: list[int] | None = None,
         phrase = m.group(0)[: m.start("tail") - m.start()] if m.group("tail") else m.group(0)
         v, tol = words_value(phrase)
         tail = (m.group("tail") or "").strip().lower()
-        if v < 20 and not tol and not tail:
-            continue                       # "three regions": allowed by the prompt
+        # Every number word is checked, except a bare "one" ("one of the regions", "no one").
+        # Until 2026-11-15 words under twenty were skipped; the first real-model benchmark
+        # showed models writing facts that way ("twelve incidents") and a derived difference
+        # ("an increase of four incidents"), neither of which was being checked.
+        if phrase.strip().lower() == "one" and not tail:
+            continue
         sign = _sign_from_context(clean, m.start(), m.end(), 0) or 1.0
         v *= sign
         cands = [(v, tol)] + ([(v / 100.0, 0.0)] if tail in ("percent", "per cent", "%") else [])
@@ -319,11 +336,22 @@ def attribution_warnings(text: str, hits: list[Hit],
 
 # ------------------------------------------------------------------ the check
 
+ROW_COUNT = "row_count"
+
+
+def with_row_count(facts: dict[str, Any], n_rows: int) -> dict[str, Any]:
+    """Add the number of rows the query returned as a fact ("the top five products" when
+    five rows came back). Only for multi-row results; it never needs a citation."""
+    return {**facts, ROW_COUNT: n_rows} if n_rows > 1 else facts
+
+
 def check_section(text: str, facts: dict[str, Any], dates_ok: list[int] | None = None,
                   numbers_used: list[dict[str, Any]] | None = None,
                   labels: dict[int, list[str]] | None = None) -> CheckResult:
     """Check one section. ``numbers_used=None`` skips citation enforcement (unit use only);
     the graph always passes the model's list, so an empty list means "nothing cited"."""
+    if labels:
+        facts = with_row_count(facts, len(labels))
     bad, cited = [], []
     for ref in numbers_used or []:
         key, val = ref.get("fact_key"), ref.get("value")
@@ -337,7 +365,7 @@ def check_section(text: str, facts: dict[str, Any], dates_ok: list[int] | None =
     uncited: list[str] = []
     if numbers_used is not None:
         for h in hits:
-            if h.fact_key is None:
+            if h.fact_key is None or h.fact_key == ROW_COUNT:
                 continue
             keys = [k for k in cited if matches(h.cands, facts[k])]
             if not keys:
