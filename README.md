@@ -7,7 +7,32 @@ model with no network.**
 
 Built with LangGraph (checkpointed graph, `interrupt()` human gate), Pydantic structured
 output, SQLite, a `networkx` schema graph, and one provider interface for Claude (Anthropic API or AWS Bedrock), a local
-Ollama model, or an offline fake. All sample data is **synthetic** (`samples/README.md`).
+Ollama model, or an offline fake. Report samples are **synthetic** (`samples/README.md`); the
+chatbot work runs on **AdventureWorks DW**, Microsoft's public sample warehouse (MIT licence,
+[docs/data/](docs/data/README.md)). This is my own reference build, made to enterprise standard on
+public data. It is not a client system and holds no client data.
+
+## Where it is going: an agentic analytics assistant
+
+Scheduled reports are the first half. The second is a chatbot that answers questions over the
+same warehouse and its documents, with the same rule: no number reaches a person unchecked.
+
+| Capability | What it means | Status |
+|---|---|---|
+| **Scheduled agentic reports** | A YAML spec per report: one read-only SQL query and one instruction per section. A model writes the prose, a deterministic checker rejects any number the query did not return, a human approves, an audit row records it. | built |
+| **Model chosen by measurement** | `eval/model_bench.py` runs the golden reports through in-region Bedrock models and ranks them by cost per passing report. | built |
+| **Chatbot: questions over tables** | Governed text-to-SQL: link the question to the schema, resolve names to values, one read-only query from the linked subset only, a checked one-line answer that shows its SQL, and a clarifying question when unsure. | in progress |
+| **Chatbot: questions over documents** | RAG over product descriptions and the archive of published reports, every passage cited. | designed |
+| **Knowledge graph** | The schema graph (tables, joins, governed metrics) extended with business entities and the documents that mention them. | schema graph built; entities in progress |
+| **AI security** | OWASP Top 10 for LLM Applications (2025), control by control. | in progress |
+| **Enterprise AWS deployment** | Private VPC in Mumbai, Cognito roles, Postgres with row-level security, Bedrock in-region, Terraform. Deploy, record evidence, destroy. | Terraform written and validated, not yet deployed |
+
+| Measured so far | Number | Source |
+|---|---|---|
+| Default model | Gemma 3 12B on Amazon Bedrock, in-region in Mumbai | `eval/results/model_bench_2026-11-15.json` |
+| Golden reports passed by it | 6 of 6 (2 report types x 3 runs), every section right first time | same |
+| Cost per report | about $0.0006 at Bedrock list price, ap-south-1 | same |
+| Corrupted numbers the checker rejects | 46 of 46 beyond the 0.5% tolerance | `tests/test_check_mutation.py` |
 
 ## The 60-second version
 
@@ -270,7 +295,7 @@ reads an unlinked table; CI fails if a golden question links or answers wrongly.
 ## Layout and docs
 
 `agentic_reporting/` (package) · `specs/` · `samples/` · `eval/` · `tests/` · `deploy/k8s/` ·
-[`docs/architecture.md`](docs/architecture.md) · ADRs:
+[`docs/architecture.md`](docs/architecture.md) · [`docs/data/`](docs/data/README.md) (the AdventureWorks warehouse) · ADRs:
 [0001 report from facts](docs/adr/0001-report-from-facts.md),
 [0002 deterministic number checker](docs/adr/0002-deterministic-number-checker.md),
 [0003 human publish gate and audit](docs/adr/0003-human-publish-gate-and-audit.md),
