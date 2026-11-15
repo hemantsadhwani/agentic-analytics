@@ -2,7 +2,7 @@
 
 Why this provider exists: the Anthropic-SDK Bedrock provider speaks only Claude. The
 Converse API is model-agnostic, so the cheapest model that passes the checker can be the
-default and Claude becomes an escalation tier (``LLM_MODEL``), with no code change.
+default and a stronger model becomes an escalation tier (``LLM_MODEL``), with no code change.
 
 Defaults (2026-11-15, chosen by ``eval/model_bench.py``; result in
 ``eval/results/model_bench_2026-11-15.json``):
@@ -14,8 +14,9 @@ Defaults (2026-11-15, chosen by ``eval/model_bench.py``; result in
   DeepSeek V3.2 also passed 6/6 at $0.00424 per report.
 * region ``ap-south-1`` (``AWS_REGION`` overrides). Credentials come from the standard AWS
   chain (``AWS_PROFILE``, an ECS task role); nothing is stored in the repo.
-* escalation example: ``LLM_MODEL=in.anthropic.claude-haiku-4-5-20251001-v1:0``, the
-  India-only inference profile.
+* escalation tier: ``LLM_MODEL=deepseek.v3.2``, also in-region (6/6 in the benchmark). Any
+  other Bedrock model works the same way; Claude would need Anthropic's one-time use-case
+  form on the account first, and an India-only ``in.`` inference profile.
 
 Structured output ladder, strongest first (``LLMResponse.structured_mode``):
 
