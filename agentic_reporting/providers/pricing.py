@@ -33,6 +33,11 @@ PRICES: dict[str, tuple[float, float, float, float]] = {
     "qwen.qwen3-32b-v1:0": (0.18, 0.71, 0.0, 0.0),
     "qwen.qwen3-next-80b-a3b": (0.18, 1.41, 0.0, 0.0),
     "zai.glm-4.7-flash": (0.08, 0.48, 0.0, 0.0),
+    # Embedding models (input tokens only), ap-south-1, in-region. Source: AWS Price List API,
+    # read 2026-11-16 (Titan: service AmazonBedrock; Cohere: AmazonBedrockFoundationModels).
+    "amazon.titan-embed-text-v2:0": (0.024, 0.0, 0.0, 0.0),
+    "cohere.embed-multilingual-v3": (0.10, 0.0, 0.0, 0.0),
+    "cohere.embed-english-v3": (0.10, 0.0, 0.0, 0.0),
 }
 PRICE_LABEL = "list price"
 

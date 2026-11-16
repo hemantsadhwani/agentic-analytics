@@ -40,7 +40,7 @@ Read in order the first time. Each chapter is 5 to 10 minutes.
 | 10 | [Deployment](10-deployment.md) | A public demo and a private enterprise system. |
 | 11 | [Rebuild it in your enterprise](11-rebuild-in-your-enterprise.md) | What to swap, and in what order. |
 | 12 | [RAG: the architecture decisions](12-rag-decisions.md) | Keyword or vector, rerank or not, routing, graphs, vector stores, long context, ingestion, cost. |
-| 13 | [RAG in this build](13-rag-in-this-build.md) | Which of those choices this project makes, and how they will be measured. |
+| 13 | [RAG in this build](13-rag-in-this-build.md) | Which of those choices this project makes, and what the measurement showed. |
 | - | [Glossary](glossary.md) | Every term, one line each. |
 
 ## How each decision is written

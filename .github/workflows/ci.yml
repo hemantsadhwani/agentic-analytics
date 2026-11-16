@@ -77,6 +77,7 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: python samples/load_adventureworks.py
       - run: python -m eval.chat_eval --fake
+      - run: python -m eval.rag_eval --fake
 
   lint:
     runs-on: ubuntu-latest

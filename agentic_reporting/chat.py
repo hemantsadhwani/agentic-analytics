@@ -104,7 +104,9 @@ class ChatAnswer:
     filters: list[dict[str, Any]] = field(default_factory=list)
     time_range: dict[str, Any] | None = None
     data_as_of: str | None = None
-    answer_mode: Literal["template", "model", "none"] = "none"
+    answer_mode: Literal["template", "model", "quote", "none"] = "none"
+    route: Literal["sql", "documents", "none"] = "none"
+    citations: list[dict[str, str]] = field(default_factory=list)   # documents: {"id", "title"}
     check: dict[str, Any] | None = None
     sql_repaired: bool = False
     repair_reasons: list[str] = field(default_factory=list)
@@ -228,6 +230,7 @@ class _Audit:
             if lines:
                 prev = hashlib.sha256(lines[-1].encode("utf-8")).hexdigest()
         rec = {"at": datetime.now(UTC).isoformat(timespec="seconds"), "prev": prev,
+               "route": answer.route, "citations": [c["id"] for c in answer.citations],
                "question": answer.question, "status": answer.status, "sql": answer.sql,
                "metric": (answer.metric or {}).get("name"), "model": answer.model,
                "check_ok": (answer.check or {}).get("ok"), "answer_mode": answer.answer_mode,
@@ -238,18 +241,33 @@ class _Audit:
 
 # --- the pipeline ------------------------------------------------------------------------
 
+@dataclass
+class Documents:
+    """The documents route. ``index=None`` is the baseline: every chunk goes in the prompt."""
+    chunks: list[Any]
+    provider: Any
+    index: Any = None                 # doc_index.DocIndex, for mode "retrieve"
+    k: int = 5
+
+    @property
+    def mode(self) -> str:
+        return "retrieve" if self.index is not None else "all"
+
+
 def ask(question: str, db: str | Path, sql_provider: Any, answer_provider: Any = None, *,
         metric: str | None = None, metrics_path: str | Path = DEFAULT_METRICS,
-        audit: Path | None = None) -> ChatAnswer:
+        audit: Path | None = None, documents: Documents | None = None) -> ChatAnswer:
     t0 = time.perf_counter()
-    out = _ask(question, db, sql_provider, answer_provider or sql_provider, metric, metrics_path)
+    out = _ask(question, db, sql_provider, answer_provider or sql_provider, metric, metrics_path,
+               documents)
     out.latency_ms = int((time.perf_counter() - t0) * 1000)
     _Audit(audit).write(out)
     return out
 
 
 def _ask(question: str, db: str | Path, sql_provider: Any, answer_provider: Any,
-         metric: str | None, metrics_path: str | Path) -> ChatAnswer:
+         metric: str | None, metrics_path: str | Path,
+         documents: Documents | None = None) -> ChatAnswer:
     g, idx = knowledge(db, metrics_path)
     matches = idx.match(question)
     rest = _without_spans(question, [(m.start, m.end) for m in matches])
@@ -265,6 +283,11 @@ def _ask(question: str, db: str | Path, sql_provider: Any, answer_provider: Any,
     if lr.clarify:
         return ChatAnswer("clarify", question, lr.clarify["ask"], options=[
             {"label": o["label"], "metric": o["metric"]} for o in lr.clarify["options"]])
+
+    # Route: a governed metric means the question is about numbers in tables (SQL). No
+    # metric, and documents are configured: the question goes to the documents.
+    if not lr.metrics and documents is not None:
+        return _documents_answer(question, matches, documents)
 
     if lr.unexplained:
         parts, options = [], []
@@ -316,7 +339,8 @@ def _ask(question: str, db: str | Path, sql_provider: Any, answer_provider: Any,
         return ChatAnswer("refused", question, f"Refused: {e}", **base)
     except ProviderUnavailable as e:
         return ChatAnswer("unavailable", question, f"The model is not available: {e}", **base)
-    ans = ChatAnswer("answered", question, "", sql=written.sql, columns=result.columns,
+    ans = ChatAnswer("answered", question, "", route="sql", sql=written.sql,
+                     columns=result.columns,
                      rows=result.rows, truncated=result.truncated, sql_repaired=written.repaired,
                      repair_reasons=written.repair_reasons, first_sql=written.first_sql,
                      model=f"{written.provider}/{written.model}",
@@ -375,6 +399,70 @@ def _model_answer(ans: ChatAnswer, question: str, result: QueryResult, provider:
     ans.answer_mode = "template"
 
 
+# A named model or subcategory narrows the document search; a category word (a quarter of the
+# catalogue, usually just a noun: "how many bikes does the Hitch Rack carry") does not.
+FILTER_COLUMNS = frozenset({"DimProduct.ModelName",
+                            "DimProductSubcategory.EnglishProductSubcategoryName"})
+
+
+def entity_terms(matches: list[Any], chunks: list[Any]) -> dict[str, list[str]]:
+    """Value matches that narrow the document search (columns the chunks are tagged with)."""
+    cols = {col for c in chunks for col in c.entities} & FILTER_COLUMNS
+    filters: dict[str, list[str]] = {}
+    for m in matches:
+        if m.column in cols:
+            filters.setdefault(m.column, []).append(m.value)
+    return filters
+
+
+def _documents_answer(question: str, matches: list[Any], docs: Documents) -> ChatAnswer:
+    from agentic_reporting.rag import answer_from_documents
+    entities = entity_terms(matches, docs.chunks)
+    assumptions: list[str] = []
+    embed_cost = 0.0
+    if docs.index is not None:
+        c0 = docs.index.embedder.cost_usd
+        r = docs.index.retrieve(question, k=docs.k, entities=entities)
+        embed_cost = docs.index.embedder.cost_usd - c0
+        passages = [h.chunk for h in r.hits]
+        assumptions.append(f"searched {len(docs.chunks)} document chunks (keyword + vector, "
+                           f"rank fusion); the top {len(passages)} went to the model")
+        if r.filtered_by:
+            assumptions.append("only chunks about " + "; ".join(
+                f"{', '.join(v)}" for v in r.filtered_by.values()))
+    else:
+        passages = list(docs.chunks)
+        assumptions.append(f"all {len(passages)} document chunks went to the model (baseline)")
+    res = answer_from_documents(question, passages, docs.provider)
+    out = ChatAnswer("answered" if res.found else "not_understood", question,
+                     res.text if res.found else
+                     "I could not find this in the data or the documents.",
+                     assumptions=assumptions, answer_mode=res.answer_mode, route="documents",
+                     citations=res.citations, check=res.check, model=res.model,
+                     input_tokens=res.input_tokens, output_tokens=res.output_tokens,
+                     cost_usd=res.cost_usd + embed_cost)
+    return out
+
+
+def documents_for(db: str | Path, mode: str, provider: Any, embedder_name: str = "fake",
+                  index_dir: Path = Path(".agentic_reporting")) -> Documents | None:
+    """Load the document chunks for ``db``; for mode "retrieve", sync the index first."""
+    if mode == "off":
+        return None
+    from agentic_reporting.documents import load_chunks
+    chunks, _ = load_chunks(db)
+    if not chunks:
+        return None
+    if mode == "all":
+        return Documents(chunks, provider)
+    from agentic_reporting.doc_index import DocIndex
+    from agentic_reporting.embeddings import get_embedder
+    emb = get_embedder(embedder_name)
+    index = DocIndex(index_dir / f"docs_{Path(db).stem}_{embedder_name}.sqlite", emb)
+    index.sync(chunks)
+    return Documents(chunks, provider, index)
+
+
 # --- CLI ---------------------------------------------------------------------------------
 
 def get_providers(name: str, db: str | Path) -> tuple[Any, Any]:
@@ -408,6 +496,8 @@ def render(a: ChatAnswer) -> str:
         lines.append(f"   assumed: {s}")
     if a.join_path:
         lines.append(f"   joins: {'; '.join(a.join_path)}")
+    for c in a.citations:
+        lines.append(f"   source: [{c['id']}] {c['title']}")
     if a.sql:
         lines.append(f"   sql ({a.model}{', repaired once' if a.sql_repaired else ''}):")
         lines.append(pretty_sql(a.sql))
@@ -417,7 +507,7 @@ def render(a: ChatAnswer) -> str:
     if a.check:
         lines.append(f"   answer check: {'ok' if a.check['ok'] else 'FAILED'}, "
                      f"{a.check['numbers_checked']} numbers checked ({a.answer_mode})")
-    elif a.status == "answered":
+    elif a.status == "answered" and a.route != "documents":
         lines.append(f"   answer: {a.answer_mode} (no model call for the prose)")
     lines.append(f"   tokens {a.input_tokens} in / {a.output_tokens} out · ${a.cost_usd:.6f} · "
                  f"{a.latency_ms} ms")
@@ -436,10 +526,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--metric", help="answer a clarifying question: the governed metric to use")
     ap.add_argument("--json", action="store_true", help="print the answer as JSON")
     ap.add_argument("--audit", default=str(DEFAULT_AUDIT), help="audit log ('' to disable)")
+    ap.add_argument("--docs", default="retrieve", choices=["retrieve", "all", "off"],
+                    help="documents route: hybrid retrieval (default), the whole corpus in the "
+                         "prompt (baseline), or off")
+    ap.add_argument("--embedder", default="fake", help="fake | titan | cohere | cohere-multilingual")
     args = ap.parse_args(argv)
     sql_p, ans_p = get_providers(args.provider, args.db)
+    if args.provider == "fake":
+        from agentic_reporting.rag import FakeRagProvider
+        doc_p: Any = FakeRagProvider()
+    else:
+        doc_p = sql_p
+    docs = documents_for(args.db, args.docs, doc_p, args.embedder)
     a = ask(args.question, args.db, sql_p, ans_p, metric=args.metric,
-            audit=Path(args.audit) if args.audit else None)
+            audit=Path(args.audit) if args.audit else None, documents=docs)
     print(json.dumps(a.to_dict(), indent=2, default=str) if args.json else render(a))
     return EXIT[a.status]
 

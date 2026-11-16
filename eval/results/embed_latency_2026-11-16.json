@@ -1,0 +1,42 @@
+{
+ "date": "2026-11-16",
+ "region": "ap-south-1",
+ "queries": [
+  "helmet",
+  "road frame",
+  "lightest road frame",
+  "Mountain-200 battery",
+  "which saddle is kevlar",
+  "taillight batteries",
+  "bike wash",
+  "how many keys cable lock",
+  "hydration pack storage",
+  "tights for winter riding"
+ ],
+ "repeats": 5,
+ "warmup": 3,
+ "results": {
+  "titan": {
+   "model": "amazon.titan-embed-text-v2:0",
+   "calls": 50,
+   "error": null,
+   "p50_ms": 83.0,
+   "p95_ms": 89.9,
+   "mean_ms": 83.5,
+   "min_ms": 77.0,
+   "max_ms": 103.0,
+   "batch_20_ms": 1659.9,
+   "cost_usd": 8.11e-06
+  },
+  "cohere": {
+   "model": "cohere.embed-english-v3",
+   "calls": 0,
+   "error": "AccessDeniedException: An error occurred (AccessDeniedException) when calling the InvokeModel operation: Model access is denied due to INVALID_PAYMENT_INSTRUMENT:A valid payment instrument must be provided.. Your AWS Market"
+  },
+  "cohere-multilingual": {
+   "model": "cohere.embed-multilingual-v3",
+   "calls": 0,
+   "error": "AccessDeniedException: An error occurred (AccessDeniedException) when calling the InvokeModel operation: Model access is denied due to INVALID_PAYMENT_INSTRUMENT:A valid payment instrument must be provided.. Your AWS Market"
+  }
+ }
+}

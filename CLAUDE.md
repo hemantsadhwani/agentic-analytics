@@ -11,13 +11,15 @@ on a local model with no network.
 agentic_reporting/     the package (spec, data, draft, check, graph, render, audit, run;
                        schema_graph + sql_writer + ask = question → linked schema subset → SQL → read-only result;
                        chat = the chatbot: values (entity index, specs/entities.yaml) + timeframe (dates anchored
-                       on the data) + link + SQL with filter check + checked answer + hash-chained audit)
+                       on the data) + link + SQL with filter check + checked answer + hash-chained audit;
+                       no metric in the question → documents route: documents (specs/documents.yaml, injection
+                       screen) + embeddings (fake | Titan V2) + doc_index (FTS5 + vectors, RRF) + rag (cited, checked))
 agentic_reporting/providers/   Provider protocol + fake, anthropic, bedrock, ollama
 specs/                 report templates (YAML): sales_mbr, ops_weekly; metrics.yaml = governed metric definitions
 samples/               SYNTHETIC data generators (seeded); *.sqlite are git-ignored;
                        load_adventureworks.py = Microsoft AdventureWorks DW (MIT), pinned commit +
                        sha256 per file, no customer PII; cache in samples/.cache/ (git-ignored)
-eval/                  report_eval.py + schema_linking_eval.py + chat_eval.py + datasets/golden/*.json (CI gates;
+eval/                  report_eval.py + schema_linking_eval.py + chat_eval.py + rag_eval.py + datasets/golden/*.json (CI gates;
                        chat_eval --fake needs samples/adventureworks.sqlite, CI downloads it);
                        chat_eval --provider bedrock-converse --model M = real chatbot benchmark;
                        model_bench.py = real Bedrock calls, picks the model by cost per passing report

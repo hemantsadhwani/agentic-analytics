@@ -54,6 +54,7 @@ demo-chat: $(AW)
 
 eval-chat: $(AW)
 	$(PY) -m eval.chat_eval --fake
+	$(PY) -m eval.rag_eval --fake
 
 # make resume THREAD=sales_mbr-20260930T101500Z DECISION=approve   (or reject)
 resume:

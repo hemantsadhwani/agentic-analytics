@@ -1,0 +1,38 @@
+# Document sources: the ONLY text the RAG index may read.
+#
+# Like specs/entities.yaml for values, this list is the governance boundary for documents:
+# a source not listed here is never indexed. Each source turns into chunks; each chunk gets a
+# stable id, a title, its text, a content hash (unchanged text is never re-embedded) and the
+# entities it is about (from the warehouse keys, never extracted by a model).
+#
+# kind: sql   one chunk per row of a read-only SELECT over the sample warehouse
+# kind: files one chunk per "## " section of each Markdown file under a folder
+#
+# A source whose tables or folder do not exist is skipped, so one file serves every sample.
+sources:
+  - id: product
+    kind: sql
+    label: product description
+    requires: [DimProduct, DimProductSubcategory, DimProductCategory]
+    # One description per product model. The title carries the model's subcategory and category
+    # (from the warehouse keys), so a chunk stands on its own when it is retrieved.
+    sql: >-
+      SELECT p.ModelName AS name, MIN(p.EnglishDescription) AS text,
+             MIN(s.EnglishProductSubcategoryName) AS subcategory,
+             MIN(c.EnglishProductCategoryName) AS category
+      FROM DimProduct AS p
+      JOIN DimProductSubcategory AS s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey
+      JOIN DimProductCategory AS c ON s.ProductCategoryKey = c.ProductCategoryKey
+      WHERE p.ModelName IS NOT NULL AND p.EnglishDescription IS NOT NULL
+      GROUP BY p.ModelName ORDER BY p.ModelName
+    title: "Product model {name} ({subcategory}, {category})"
+    entities:
+      DimProduct.ModelName: name
+      DimProductSubcategory.EnglishProductSubcategoryName: subcategory
+      DimProductCategory.EnglishProductCategoryName: category
+
+  - id: report
+    kind: files
+    label: published report
+    # Published monthly reviews on AdventureWorks (approved reports only).
+    folder: reports/adventureworks

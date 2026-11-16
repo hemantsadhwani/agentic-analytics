@@ -27,8 +27,8 @@ same warehouse and its documents, with the same rule: no number reaches a person
 | **Scheduled agentic reports** | A YAML spec per report: one read-only SQL query and one instruction per section. A model writes the prose, a deterministic checker rejects any number the query did not return, a human approves, an audit row records it. | built |
 | **Model chosen by measurement** | `eval/model_bench.py` runs the golden reports through in-region Bedrock models and ranks them by cost per passing report. | built |
 | **Chatbot: questions over tables** | Governed text-to-SQL on AdventureWorks DW: names resolved to exact values, time words to exact dates (anchored on the data), one read-only query from the linked subset only, the filters checked to be in the SQL, a checked answer that shows its SQL and assumptions, a clarifying question when a word has two meanings, and a refusal for joins that double-count. [ADR-0006](docs/adr/0006-governed-analytics-chatbot.md) | built (single turn) |
-| **Chatbot: questions over documents** | RAG over product descriptions and the archive of published reports, every passage cited and every number checked; first measured against "whole corpus in the prompt". [Decisions](docs/guide/12-rag-decisions.md), [plan](docs/guide/13-rag-in-this-build.md) | designed |
-| **Knowledge graph** | The schema graph (tables, joins, governed metrics) extended with business entities (products, territories, resellers and their hierarchy) and the documents that mention them. | schema graph and entities built; documents next |
+| **Chatbot: questions over documents** | RAG over the product descriptions: hybrid search (keyword BM25 + vectors, rank fusion), the product named in the question narrows the search, every passage cited, every number checked against the cited text, instruction-like text quarantined at ingestion. Measured against "whole corpus in the prompt". [Decisions](docs/guide/12-rag-decisions.md), [this build](docs/guide/13-rag-in-this-build.md) | built over product descriptions; report archive next |
+| **Knowledge graph** | The schema graph (tables, joins, governed metrics) extended with business entities (products, territories, resellers and their hierarchy) and the documents that mention them. | schema graph, entities and document tags built |
 | **AI security** | OWASP Top 10 for LLM Applications (2025), control by control. | in progress |
 | **Enterprise AWS deployment** | Private VPC in Mumbai, Cognito roles, Postgres with row-level security, Bedrock in-region, Terraform. Deploy, record evidence, destroy. | Terraform written and validated, not yet deployed |
 
@@ -41,6 +41,8 @@ same warehouse and its documents, with the same rule: no number reaches a person
 | Chatbot, golden questions, Gemma 3 12B x 3 runs | right behaviour 66/66 (answer, ask back, refuse); SQL results correct 48/48 | `eval/results/chat_bench_gemma-3-12b_2026-11-15.json` |
 | Cost per answered question | about $0.00024 (Gemma); DeepSeek V3.2 also 48/48 at about $0.0015 | same, and `chat_bench_deepseek-v3.2_2026-11-15.json` |
 | SQL with its filter removed | refused 16 of 16 (negative control, every CI run) | `eval/chat_eval.py` |
+| Documents: retrieval (top 5) vs whole corpus in the prompt, Gemma 3 12B + Titan V2 x 3 runs | 19/19 vs 18/19 correct; recall@5 14/14; 401 vs 5,967 input tokens; $0.000059 vs $0.000668 per question | `eval/results/rag_bench_gemma-3-12b_titan_2026-11-16.json` |
+| Planted "ignore your instructions" chunk | quarantined at ingestion in every run | `eval/rag_eval.py` |
 
 ## The 60-second version
 
