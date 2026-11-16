@@ -53,4 +53,4 @@ Do these in order. Each step is useful on its own, and each makes the next one s
 4. **Ask or refuse when unsure.** Never guess with numbers.
 5. **Record everything**, and keep the evidence next to the claim.
 
-Back to the [guide index](README.md) · [Glossary](glossary.md)
+Next: [12. RAG: the architecture decisions](12-rag-decisions.md) · [Guide index](README.md) · [Glossary](glossary.md)

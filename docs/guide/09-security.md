@@ -55,7 +55,7 @@ and a test exist.
 | LLM05 Improper output handling | trusting model output as code or fact | SQL guard and allow-list; every number checked; JSON validated against a schema | built |
 | LLM06 Excessive agency | the model can do too much | fixed workflow; no tools; read-only; human approves publishing; budgets | built |
 | LLM07 System prompt leakage | secrets in prompts | prompts hold no secrets or keys | built |
-| LLM08 Vector and embedding weaknesses | attacks through the search index | RAG over documents is next | designed |
+| LLM08 Vector and embedding weaknesses | attacks through the search index | permission filter before ranking, retrieved text treated as data, numbers checked against cited chunks ([chapter 12](12-rag-decisions.md)) | designed |
 | LLM09 Misinformation | confident wrong answers | number checker; ask instead of guess; show SQL and assumptions | built |
 | LLM10 Unbounded consumption | runaway cost or denial of service | per-run budgets; fail-closed pricing; one repair, never a loop; public demo caps and rate limits | run limits built; demo caps designed |
 
