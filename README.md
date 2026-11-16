@@ -1,13 +1,18 @@
 # agentic-analytics
 
-**Agents draft a report section by section from read-only SQL facts. A deterministic checker
-rejects any number the model did not get from a query. A human approves before it publishes.
-An audit row records it. Golden reports gate it in CI. The same pipeline runs against a local
-model with no network.**
+**An analytics assistant with two capabilities over one warehouse: scheduled reports and a
+chatbot. A model writes the words; code makes sure every number came from the data. A
+deterministic checker rejects any number a query did not return, the chatbot asks instead of
+guessing, a human approves before a report publishes, and every decision is audited. Golden
+sets gate it in CI.**
+
+> **New to this?** Start with [the guide](docs/guide/README.md): every design decision in plain
+> English, why it is made, and what an enterprise would use instead.
 
 Built with LangGraph (checkpointed graph, `interrupt()` human gate), Pydantic structured
-output, SQLite, a `networkx` schema graph, and one provider interface for Claude (Anthropic API or AWS Bedrock), a local
-Ollama model, or an offline fake. Report samples are **synthetic** (`samples/README.md`); the
+output, SQLite, a `networkx` schema graph, and one provider interface for any Amazon Bedrock
+model through the Converse API (default: Gemma 3 12B, in-region in Mumbai, chosen by
+benchmark), Claude, a local Ollama model, or an offline fake. Report samples are **synthetic** (`samples/README.md`); the
 chatbot work runs on **AdventureWorks DW**, Microsoft's public sample warehouse (MIT licence,
 [docs/data/](docs/data/README.md)). This is my own reference build, made to enterprise standard on
 public data. It is not a client system and holds no client data.
@@ -21,9 +26,9 @@ same warehouse and its documents, with the same rule: no number reaches a person
 |---|---|---|
 | **Scheduled agentic reports** | A YAML spec per report: one read-only SQL query and one instruction per section. A model writes the prose, a deterministic checker rejects any number the query did not return, a human approves, an audit row records it. | built |
 | **Model chosen by measurement** | `eval/model_bench.py` runs the golden reports through in-region Bedrock models and ranks them by cost per passing report. | built |
-| **Chatbot: questions over tables** | Governed text-to-SQL: link the question to the schema, resolve names to values, one read-only query from the linked subset only, a checked one-line answer that shows its SQL, and a clarifying question when unsure. | in progress |
+| **Chatbot: questions over tables** | Governed text-to-SQL on AdventureWorks DW: names resolved to exact values, time words to exact dates (anchored on the data), one read-only query from the linked subset only, the filters checked to be in the SQL, a checked answer that shows its SQL and assumptions, a clarifying question when a word has two meanings, and a refusal for joins that double-count. [ADR-0006](docs/adr/0006-governed-analytics-chatbot.md) | built (single turn) |
 | **Chatbot: questions over documents** | RAG over product descriptions and the archive of published reports, every passage cited. | designed |
-| **Knowledge graph** | The schema graph (tables, joins, governed metrics) extended with business entities and the documents that mention them. | schema graph built; entities in progress |
+| **Knowledge graph** | The schema graph (tables, joins, governed metrics) extended with business entities (products, territories, resellers and their hierarchy) and the documents that mention them. | schema graph and entities built; documents next |
 | **AI security** | OWASP Top 10 for LLM Applications (2025), control by control. | in progress |
 | **Enterprise AWS deployment** | Private VPC in Mumbai, Cognito roles, Postgres with row-level security, Bedrock in-region, Terraform. Deploy, record evidence, destroy. | Terraform written and validated, not yet deployed |
 
@@ -33,6 +38,9 @@ same warehouse and its documents, with the same rule: no number reaches a person
 | Golden reports passed by it | 6 of 6 (2 report types x 3 runs), every section right first time | same |
 | Cost per report | about $0.0006 at Bedrock list price, ap-south-1 | same |
 | Corrupted numbers the checker rejects | 46 of 46 beyond the 0.5% tolerance | `tests/test_check_mutation.py` |
+| Chatbot, golden questions, Gemma 3 12B x 3 runs | right behaviour 66/66 (answer, ask back, refuse); SQL results correct 48/48 | `eval/results/chat_bench_gemma-3-12b_2026-11-15.json` |
+| Cost per answered question | about $0.00024 (Gemma); DeepSeek V3.2 also 48/48 at about $0.0015 | same, and `chat_bench_deepseek-v3.2_2026-11-15.json` |
+| SQL with its filter removed | refused 16 of 16 (negative control, every CI run) | `eval/chat_eval.py` |
 
 ## The 60-second version
 
