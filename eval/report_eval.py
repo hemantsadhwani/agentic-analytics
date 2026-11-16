@@ -150,7 +150,8 @@ def main(argv: list[str] | None = None) -> int:
     from agentic_reporting.providers.fake import FabricatingProvider, FactsFakeProvider
 
     # schema_questions_*.json belong to eval/schema_linking_eval.py, not to this gate.
-    goldens = sorted(p for p in GOLDEN_DIR.glob("*.json") if not p.name.startswith("schema_questions_"))
+    goldens = sorted(p for p in GOLDEN_DIR.glob("*.json")
+                     if not p.name.startswith(("schema_questions_", "chat_questions_")))
     if not goldens:
         print(f"REPORT-EVAL FAIL: no golden files in {GOLDEN_DIR}")
         return 1

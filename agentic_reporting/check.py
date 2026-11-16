@@ -232,12 +232,27 @@ def _valid_date(m: re.Match[str]) -> bool:
 
 # ------------------------------------------------------------------ scanning
 
+def name_spans(text: str, names: list[str] | None) -> list[tuple[int, int]]:
+    """Where a known name occurs ("Mountain-200 Black, 38"): its digits are part of the name.
+
+    ``names`` must come from the data (text cells of the result, resolved filter values),
+    never from the model, or a model could hide a number by calling it a name."""
+    spans: list[tuple[int, int]] = []
+    for n in sorted({x for x in names or [] if x and any(c.isdigit() for c in x)},
+                    key=len, reverse=True):
+        for m in re.finditer(r"(?<!\w)" + re.escape(n) + r"(?!\w)", text, re.IGNORECASE):
+            if not any(a <= m.start() < b for a, b in spans):
+                spans.append(m.span())
+    return spans
+
+
 def scan(text: str, facts: dict[str, Any], dates_ok: list[int] | None = None,
-         prefer: list[str] | None = None) -> list[Hit]:
+         prefer: list[str] | None = None, names: list[str] | None = None) -> list[Hit]:
     """Every checked number in ``text`` with its span and the fact it matched (or None)."""
     ok_years = set(dates_ok or [])
     hits: list[Hit] = []
-    masked: list[tuple[int, int]] = []
+    masked: list[tuple[int, int]] = name_spans(text, names)
+    text = _mask(text, masked)
     for m in DATE_TOKEN_RE.finditer(text):
         masked.append(m.span())
         if int(m.group(1)) not in ok_years or not _valid_date(m):
@@ -347,7 +362,8 @@ def with_row_count(facts: dict[str, Any], n_rows: int) -> dict[str, Any]:
 
 def check_section(text: str, facts: dict[str, Any], dates_ok: list[int] | None = None,
                   numbers_used: list[dict[str, Any]] | None = None,
-                  labels: dict[int, list[str]] | None = None) -> CheckResult:
+                  labels: dict[int, list[str]] | None = None,
+                  names: list[str] | None = None) -> CheckResult:
     """Check one section. ``numbers_used=None`` skips citation enforcement (unit use only);
     the graph always passes the model's list, so an empty list means "nothing cited"."""
     if labels:
@@ -360,7 +376,7 @@ def check_section(text: str, facts: dict[str, Any], dates_ok: list[int] | None =
             bad.append(f"{key}={val}")
         else:
             cited.append(key)
-    hits = scan(text, facts, dates_ok, prefer=cited)
+    hits = scan(text, facts, dates_ok, prefer=cited, names=names)
     unsupported = [h.token for h in hits if h.fact_key is None]
     uncited: list[str] = []
     if numbers_used is not None:

@@ -8,11 +8,11 @@ SPEC ?= specs/sales_mbr.yaml
 DATA ?= samples/sales.sqlite
 Q ?= Which region had the highest net revenue last month?
 
-.PHONY: help install samples test lint eval demo demo-ask resume list demo-private demo-bedrock \
+.PHONY: help install samples test lint eval demo demo-ask demo-chat eval-chat resume list demo-private demo-bedrock \
         docker-build docker-demo clean
 
 help:
-	@echo "install samples test lint eval demo demo-ask resume THREAD=.. DECISION=.. list"
+	@echo "install samples test lint eval demo demo-ask demo-chat eval-chat resume THREAD=.. DECISION=.. list"
 	@echo "demo-private demo-bedrock docker-build docker-demo clean"
 
 install:
@@ -40,6 +40,20 @@ demo: samples
 # make demo-ask DATA=samples/ops.sqlite Q="Which team had the most incidents last month?"
 demo-ask: samples
 	$(PY) -m agentic_reporting.ask --db $(DATA) "$(Q)"
+
+# The analytics chatbot on AdventureWorks DW (downloads the pinned public sample once).
+# make demo-chat Q="What were internet sales of Mountain-200 Black, 38 in the Northwest in 2013?"
+# Offline the fake writer knows only the golden questions; add PROVIDER=bedrock-converse for Gemma.
+AW ?= samples/adventureworks.sqlite
+PROVIDER ?= fake
+samples/adventureworks.sqlite:
+	$(PY) samples/load_adventureworks.py
+
+demo-chat: $(AW)
+	$(PY) -m agentic_reporting.chat --db $(AW) --provider $(PROVIDER) "$(Q)"
+
+eval-chat: $(AW)
+	$(PY) -m eval.chat_eval --fake
 
 # make resume THREAD=sales_mbr-20260930T101500Z DECISION=approve   (or reject)
 resume:

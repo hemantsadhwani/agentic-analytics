@@ -9,18 +9,23 @@ on a local model with no network.
 
 ```
 agentic_reporting/     the package (spec, data, draft, check, graph, render, audit, run;
-                       schema_graph + sql_writer + ask = question → linked schema subset → SQL → read-only result)
+                       schema_graph + sql_writer + ask = question → linked schema subset → SQL → read-only result;
+                       chat = the chatbot: values (entity index, specs/entities.yaml) + timeframe (dates anchored
+                       on the data) + link + SQL with filter check + checked answer + hash-chained audit)
 agentic_reporting/providers/   Provider protocol + fake, anthropic, bedrock, ollama
 specs/                 report templates (YAML): sales_mbr, ops_weekly; metrics.yaml = governed metric definitions
 samples/               SYNTHETIC data generators (seeded); *.sqlite are git-ignored;
                        load_adventureworks.py = Microsoft AdventureWorks DW (MIT), pinned commit +
                        sha256 per file, no customer PII; cache in samples/.cache/ (git-ignored)
-eval/                  report_eval.py + schema_linking_eval.py + datasets/golden/*.json (both are CI gates);
+eval/                  report_eval.py + schema_linking_eval.py + chat_eval.py + datasets/golden/*.json (CI gates;
+                       chat_eval --fake needs samples/adventureworks.sqlite, CI downloads it);
+                       chat_eval --provider bedrock-converse --model M = real chatbot benchmark;
                        model_bench.py = real Bedrock calls, picks the model by cost per passing report
                        (NOT a CI gate; results committed in eval/results/)
 tests/                 pytest, offline only (fake providers, socket-patched private mode)
 deploy/k8s/            CronJob (runs to the gate) + approver pod + PVC, kustomize
-docs/                  architecture.md, adr/0001-0005 (0005 = schema graph: the graph holds the map, the warehouse holds the rows)
+docs/                  architecture.md, adr/0001-0006 (0005 = schema graph: the graph holds the map, the warehouse holds the rows;
+                       0006 = the chatbot: understand in code, ask when unsure, show the work); data/ = AdventureWorks
 ```
 
 ## Commands
@@ -33,6 +38,7 @@ make resume THREAD=<t> DECISION=approve
 make list                          # audit rows + open threads
 make demo-private                  # needs `ollama serve`; exits 0 with a hint if absent
 make demo-ask                      # question → schema graph → SQL → rows (fake SQL writer answers the 10 golden questions only)
+make demo-chat Q="..."             # the chatbot on AdventureWorks (fake = golden questions only; PROVIDER=bedrock-converse)
 ```
 
 Run anything that could reach a model with `ANTHROPIC_API_KEY= LOGFIRE_TOKEN=` prefixed

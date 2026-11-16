@@ -10,7 +10,8 @@ Nodes (``kind``):
 
 * ``table:<t>`` and ``column:<t>.<c>`` (type, primary key);
 * ``join:<t>.<c>=<t2>.<c2>``: a join key, from a declared foreign key or inferred when two
-  tables share a ``*_id`` column that is the primary key of one of them;
+  tables share a ``*_id`` column that is the primary key of one of them. The left side
+  holds the key (many rows), the right side is the table it points to (one row);
 * ``metric:<name>``: a governed metric from ``specs/metrics.yaml`` (expression, grain,
   time column, owner), loaded only if its table and columns exist in this database;
 * ``term:<phrase>``: a metric synonym.
@@ -20,10 +21,17 @@ Edges (``kind``): ``has_column`` (table → column), ``joins_on`` (join → both
 
 **Link** is deterministic and has no LLM and no embeddings. Candidates come from lexical
 overlap between the question and table names, column names, metric names and synonyms
-(lower-cased, plural ``s`` stripped). The best-scoring metric is expanded along
-``derives_from``. Every candidate table is then connected to the anchor table (the metric's
-table) by the shortest path over ``has_column``/``joins_on`` edges; the union of those
-paths is the join path. ``confidence`` is a documented heuristic, not a probability.
+(lower-cased, CamelCase and ``_`` split, plural ``s`` stripped). The best-scoring metric is
+expanded along ``derives_from``. Every candidate table is then connected to the anchor table
+(the metric's table) by the shortest path that follows joins **from the many side to the one
+side only** (fact → dimension → parent dimension). A path that would go back from a
+dimension to another fact table would repeat rows and inflate the sum (a fan trap), so that
+table is reported ``unreachable`` instead. ``confidence`` is a documented heuristic, not a
+probability.
+
+A word that names several governed metrics ("sales" when the warehouse has internet and
+reseller sales) is listed under ``ambiguous:`` in the metrics file; if no specific metric
+matched, ``link`` returns ``clarify`` with the options instead of guessing.
 """
 
 from __future__ import annotations
@@ -54,7 +62,9 @@ STOP = frozenset("""
 a an the of in on for to by per and or with from at as is are was were be been did do does
 had has have what which who whom how many much we our us me show list give get got tell
 most highest lowest top least best worst largest smallest biggest earned made each all any
-there their it its than that
+there their it its than that were did can could would please about across
+include included includes including contain contains containing during between versus vs
+compare compared breakdown split overall total we go went look see
 """.split())
 # Time words: not linked to a node, but they count as understood (the SQL writer handles
 # "last month" with the metric's time column).
@@ -63,8 +73,12 @@ last latest previous prior current this month monthly week weekly year yearly qu
 daily today yesterday
 """.split())
 # Column-name parts too generic to link on by themselves.
-GENERIC = frozenset({"id", "name", "at", "to", "of", "the", "is", "pct"})
+GENERIC = frozenset({"id", "name", "at", "to", "of", "the", "is", "pct", "key", "english",
+                     "alternate"})
+# Star-schema prefixes: ``DimProduct`` is the product table, ``FactInternetSales`` internet sales.
+TABLE_PREFIXES = frozenset({"dim", "fact"})
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
+_CAMEL_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
 _FORBIDDEN_RE = re.compile(r"\b(" + "|".join(FORBIDDEN) + r")\b", re.IGNORECASE)
 
 # confidence = W_METRIC·[metric found] + W_JOINED·[every candidate table joined]
@@ -84,9 +98,24 @@ def stem(word: str) -> str:
     return word
 
 
+def split_camel(text: str) -> str:
+    """``EnglishProductName`` → ``English Product Name``; ``order_date`` is unchanged."""
+    return _CAMEL_RE.sub(" ", text)
+
+
 def tokens(text: str) -> list[str]:
-    """Lower-case word stems of ``text`` with stop words removed (``_`` and ``-`` split)."""
-    return [stem(w) for w in _TOKEN_RE.findall(text.lower().replace("_", " ")) if w not in STOP]
+    """Lower-case word stems, stop words removed (``_``, ``-`` and CamelCase split)."""
+    return [stem(w) for w in _TOKEN_RE.findall(split_camel(text).lower().replace("_", " "))
+            if w not in STOP]
+
+
+def is_key(column: str) -> bool:
+    """A surrogate or foreign key (``customer_id``, ``ProductKey``): linked only through joins."""
+    return column == "id" or column.endswith("_id") or column.endswith("Key")
+
+
+def is_label(column: str) -> bool:
+    return column.endswith("_name") or (column.endswith("Name") and not is_key(column))
 
 
 # --- governed metrics --------------------------------------------------------------------
@@ -113,6 +142,20 @@ class Metric(BaseModel):
         if ";" in v or "--" in v:
             raise ValueError("metric expression must be one expression, no ';' or comments")
         return v.strip()
+
+
+class Ambiguous(BaseModel):
+    """A word that names several governed metrics; the bot asks which one is meant."""
+    model_config = ConfigDict(extra="forbid")
+
+    phrases: list[str] = Field(min_length=1)
+    options: list[str] = Field(min_length=2)
+    ask: str
+
+
+def load_ambiguous(path: str | Path = DEFAULT_METRICS) -> list[Ambiguous]:
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    return [Ambiguous.model_validate(a) for a in data.get("ambiguous", [])]
 
 
 def load_metrics(path: str | Path = DEFAULT_METRICS) -> list[Metric]:
@@ -204,6 +247,8 @@ def build_schema_graph(db_path: str | Path, metrics_path: str | Path = DEFAULT_M
             term = f"term:{syn.lower()}"
             g.add_node(term, kind="term", phrase=syn.lower())
             g.add_edge(term, f"metric:{m.name}", kind="synonym_of")
+    g.graph["ambiguous"] = [a.model_dump() for a in load_ambiguous(metrics_path)
+                            if all(o in names for o in a.options)]
     return g
 
 
@@ -260,6 +305,10 @@ class LinkResult:
     evidence: dict[str, str] = field(default_factory=dict)    # node → why it was linked
     unexplained: list[str] = field(default_factory=list)      # content words no node matched
     unreachable: list[str] = field(default_factory=list)      # candidate tables with no join
+    clarify: dict[str, Any] | None = None                     # {"ask", "phrase", "options"}
+    filters: list[dict[str, Any]] = field(default_factory=list)   # resolved values, applied =
+    time_range: dict[str, Any] | None = None                  # resolved dates, time column
+    data_as_of: str | None = None                             # latest date in the metric data
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -275,6 +324,11 @@ class LinkResult:
             "metrics": {n: {k: d[k] for k in ("label", "expression", "grain", "time_column",
                                                 "description")}
                         for n, d in self.metric_definitions.items()},
+            **({"filters": [{"column": f["column"], "values": f["values"]}
+                            for f in self.filters]} if self.filters else {}),
+            **({"time_range": {k: self.time_range[k] for k in ("column", "start", "end")}}
+               if self.time_range else {}),
+            **({"data_as_of": self.data_as_of} if self.data_as_of else {}),
         }
 
 
@@ -292,12 +346,20 @@ def _metric_closure(g: nx.DiGraph, name: str) -> list[str]:
     return [n[len("metric:"):] for n in out]
 
 
-def link(question: str, g: nx.DiGraph) -> LinkResult:
-    """Deterministic schema linking: candidates by lexical overlap, joins by shortest path."""
+def link(question: str, g: nx.DiGraph, *, metric: str | None = None,
+         filter_columns: list[str] | None = None, explained_words: set[str] | None = None,
+         ) -> LinkResult:
+    """Deterministic schema linking: candidates by lexical overlap, joins by shortest path.
+
+    ``metric`` forces the primary metric (the user's answer to a clarifying question).
+    ``filter_columns`` (``table.column``) are columns a resolved value sits in: their tables
+    join the candidates. ``explained_words`` are word stems already understood elsewhere
+    (a resolved value, a resolved time phrase).
+    """
     q = tokens(question)
     qset = set(q)
     res = LinkResult(question=question)
-    explained: set[str] = set(qset & TIME_WORDS)
+    explained: set[str] = set(qset & TIME_WORDS) | (set(explained_words or ()) & qset)
 
     # 1. Metrics: a name or synonym matches if all its word stems are in the question.
     best: tuple[int, int, str, str] | None = None     # (score, -yaml order, name, phrase)
@@ -311,6 +373,22 @@ def link(question: str, g: nx.DiGraph) -> LinkResult:
                 cand = (len(pt), -order, d["name"], phrase)
                 if best is None or cand[:2] > best[:2]:
                     best = cand
+    if metric is not None:
+        if f"metric:{metric}" not in g:
+            raise ValueError(f"unknown metric {metric!r} for this database")
+        explained |= {w for a in g.graph.get("ambiguous", []) if metric in a["options"]
+                      for p in a["phrases"] for w in tokens(p) if w in qset}
+        best = (99, 0, metric, "chosen by the user")
+    elif best is None:
+        for a in g.graph.get("ambiguous", []):
+            hit = next((p for p in a["phrases"] if (pt := set(tokens(p))) and pt <= qset), None)
+            if hit:
+                res.clarify = {"ask": a["ask"], "phrase": hit, "options": [
+                    {"metric": o, "label": g.nodes[f"metric:{o}"]["label"]}
+                    for o in a["options"]]}
+                explained |= set(tokens(hit))
+                break
+    metric_words = set(tokens(best[3])) if best and metric is None else set()
 
     candidate_tables: list[str] = []
     columns: list[str] = []
@@ -322,6 +400,12 @@ def link(question: str, g: nx.DiGraph) -> LinkResult:
     def add_column(tc: str) -> None:
         if tc not in columns:
             columns.append(tc)
+
+    for fc in filter_columns or []:
+        if f"column:{fc}" in g:
+            add_table(fc.split(".", 1)[0])
+            add_column(fc)
+            res.evidence.setdefault(f"column:{fc}", "a value in the question")
 
     if best:
         res.evidence[f"metric:{best[2]}"] = f"matched {best[3]!r}"
@@ -343,60 +427,84 @@ def link(question: str, g: nx.DiGraph) -> LinkResult:
     #    ("unit price", not just "units"); a part equal to its own table's name ("customer"
     #    in customers.customer_name) and generic parts (id, name, at) do not count.
     lexical_hits: dict[str, int] = {}
+    table_words: set[str] = set()
     for node, d in g.nodes(data=True):
-        if d["kind"] == "table":
-            tt = set(tokens(d["name"]))
-            if tt and tt <= qset:
-                explained |= tt
-                add_table(d["name"])
-                lexical_hits[d["name"]] = lexical_hits.get(d["name"], 0) + len(tt)
-                res.evidence[node] = f"table name {d['name']!r}"
-        elif d["kind"] == "column" and not d["name"].endswith("_id") and d["name"] != "id":
-            own = set(tokens(d["table"]))
-            ct = {t for t in tokens(d["name"]) if t not in GENERIC and t not in own}
-            hit = ct if ct and ct <= qset else set()     # every significant part, not one
-            if hit:
-                explained |= hit
-                add_table(d["table"])
-                add_column(f"{d['table']}.{d['name']}")
-                lexical_hits[d["table"]] = lexical_hits.get(d["table"], 0) + len(hit)
-                res.evidence.setdefault(node, f"column word {sorted(hit)[0]!r}")
+        if d["kind"] != "table":
+            continue
+        tt = set(tokens(d["name"])) - TABLE_PREFIXES
+        if tt and tt <= metric_words:      # "reseller sales" names a metric, not DimReseller
+            continue
+        if tt and tt <= qset:
+            explained |= tt
+            table_words |= tt
+            add_table(d["name"])
+            lexical_hits[d["name"]] = lexical_hits.get(d["name"], 0) + len(tt)
+            res.evidence[node] = f"table name {d['name']!r}"
+    col_hits: list[tuple[str, dict[str, Any], set[str]]] = []
+    for node, d in g.nodes(data=True):
+        if d["kind"] != "column" or is_key(d["name"]):
+            continue
+        own = set(tokens(d["table"])) - TABLE_PREFIXES
+        ct = {t for t in tokens(d["name"]) if t not in GENERIC and t not in own}
+        hit = ct if ct and ct <= qset else set()     # every significant part, not one
+        if not hit or hit <= TIME_WORDS:            # "month" is a time phrase, not DimDate
+            continue
+        if hit <= table_words and d["table"] not in candidate_tables:
+            continue                                # "product category" is DimProductCategory
+        col_hits.append((node, d, hit))
+    for node, d, hit in col_hits:
+        if any(hit < other for _, _, other in col_hits):
+            continue                                # "type" loses to "business type"
+        explained |= hit
+        add_table(d["table"])
+        add_column(f"{d['table']}.{d['name']}")
+        lexical_hits[d["table"]] = lexical_hits.get(d["table"], 0) + len(hit)
+        res.evidence.setdefault(node, f"column word {sorted(hit)[0]!r}")
 
-    # 3. Join path: shortest path over has_column/joins_on from the anchor to each table.
+    # 3. Join path: shortest path from the anchor along joins, many side → one side only.
     if candidate_tables:
         anchor = (g.nodes[f"metric:{res.metrics[0]}"]["table"] if res.metrics else
-                  sorted(lexical_hits, key=lambda t: (-lexical_hits[t], t))[0])
-        view = nx.subgraph_view(g, filter_edge=lambda u, v: g.edges[u, v]["kind"] in PATH_EDGES)
-        undirected = view.to_undirected(as_view=True)
+                  min(lexical_hits, key=lambda t: (-lexical_hits[t], t)) if lexical_hits
+                  else candidate_tables[0])
+        tg = nx.DiGraph()
+        tg.add_node(anchor)
+        for node, d in g.nodes(data=True):
+            if d["kind"] == "join":
+                tg.add_edge(d["left_table"], d["right_table"], join=node)
+        if not res.metrics:          # a lookup with no measure cannot fan out a sum
+            tg = tg.to_undirected()
         tables = [anchor]
         for t in candidate_tables:
             if t == anchor:
                 continue
             try:
-                path = nx.shortest_path(undirected, f"table:{anchor}", f"table:{t}")
-            except nx.NetworkXNoPath:
+                path = nx.shortest_path(tg, anchor, t)
+            except (nx.NetworkXNoPath, nx.NodeNotFound):
                 res.unreachable.append(t)
                 continue
-            for node in path:
-                d = g.nodes[node]
-                if d["kind"] == "table" and d["name"] not in tables:
-                    tables.append(d["name"])
-                    res.evidence.setdefault(node, "on the join path")
-                elif d["kind"] == "join":
-                    step = JoinStep(d["left_table"], d["left_column"], d["right_table"],
-                                    d["right_column"], d["source"])
-                    if step not in res.join_path:
-                        res.join_path.append(step)
-                        add_column(f"{step.left_table}.{step.left_column}")
-                        add_column(f"{step.right_table}.{step.right_column}")
+            for a, b in zip(path, path[1:], strict=False):
+                for tn in (a, b):
+                    if tn not in tables:
+                        tables.append(tn)
+                        res.evidence.setdefault(f"table:{tn}", "on the join path")
+                d = g.nodes[tg.edges[a, b]["join"]]
+                step = JoinStep(d["left_table"], d["left_column"], d["right_table"],
+                                d["right_column"], d["source"])
+                if step not in res.join_path:
+                    res.join_path.append(step)
+                    add_column(f"{step.left_table}.{step.left_column}")
+                    add_column(f"{step.right_table}.{step.right_column}")
         res.tables = tables
-        # A table linked only by its name gets its label column(s) (*_name) so the answer
-        # can say which team or customer, not just which id.
+        # A table linked only by its name gets its label column(s) (*_name, *Name; else its
+        # text columns) so the answer can say which team or region, not just which key.
         for t in tables:
-            if not any(c.split(".", 1)[0] == t and not c.endswith("_id") for c in columns):
-                for n in g.successors(f"table:{t}"):
-                    if g.nodes[n]["name"].endswith("_name"):
-                        add_column(f"{t}.{g.nodes[n]['name']}")
+            if not any(c.split(".", 1)[0] == t and not is_key(c.split(".", 1)[1])
+                       for c in columns):
+                cols_t = [g.nodes[n] for n in g.successors(f"table:{t}")]
+                labels = [c["name"] for c in cols_t if is_label(c["name"])] or [
+                    c["name"] for c in cols_t if not is_key(c["name"]) and c["type"] == "TEXT"]
+                for name in labels:
+                    add_column(f"{t}.{name}")
         res.columns = [c for c in columns if c.split(".", 1)[0] in tables]
         res.column_types = {c: g.nodes[f"column:{c}"]["type"] for c in res.columns}
 

@@ -194,10 +194,11 @@ def question_key(question: str) -> str:
 def question_from(messages: list[dict]) -> str:
     """The question the SQL-writer prompt carries on the line after ``QUESTION:``."""
     from agentic_reporting.sql_writer import QUESTION_MARKER
-    lines = str(messages[-1].get("content", "")).splitlines()
-    for n, line in enumerate(lines):
-        if line.strip() == QUESTION_MARKER and n + 1 < len(lines):
-            return lines[n + 1]
+    for m in reversed(messages):          # a repair turn follows the original question
+        lines = str(m.get("content", "")).splitlines()
+        for n, line in enumerate(lines):
+            if line.strip() == QUESTION_MARKER and n + 1 < len(lines):
+                return lines[n + 1]
     raise ValueError("no QUESTION block in the prompt")
 
 
@@ -212,8 +213,10 @@ class FakeSQLProvider:
     name = "fake"
     model = "sql-fake-1"
 
-    def __init__(self) -> None:
+    def __init__(self, extra: dict[str, tuple[str, list[str]]] | None = None) -> None:
+        """``extra``: more hand-written answers, keyed like ``GOLDEN_SQL`` (the chat goldens)."""
         self.calls: list[dict[str, Any]] = []
+        self.known = {**GOLDEN_SQL, **(extra or {})}
 
     def complete(self, *, system: str, messages: list[dict], max_tokens: int,
                  schema: Any = None, cache_system: bool = True) -> LLMResponse:
@@ -222,12 +225,12 @@ class FakeSQLProvider:
 
         self.calls.append({"system": system, "messages": messages})
         question = question_from(messages)
-        if question_key(question) not in GOLDEN_SQL:
+        if question_key(question) not in self.known:
             raise ProviderUnavailable(
                 "the offline fake SQL writer knows only the golden questions in "
                 "eval/datasets/golden/schema_questions_*.json; for any other question use "
                 "--provider anthropic|bedrock|ollama")
-        sql, metrics = GOLDEN_SQL[question_key(question)]
+        sql, metrics = self.known[question_key(question)]
         answer = SQLAnswer(sql=sql, uses_metrics=metrics,
                            rationale="hand-written SQL for a golden question (offline fake)")
         in_tok = (len(system) + sum(len(str(m.get("content", ""))) for m in messages)) // 4

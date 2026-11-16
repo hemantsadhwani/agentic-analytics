@@ -1,0 +1,45 @@
+# Entity columns: the ONLY columns whose distinct values the value index may read.
+#
+# The value index (agentic_reporting/values.py) turns "Mountain-200 Black, 38" or "Northwest"
+# in a question into an exact filter (DimProduct.EnglishProductName = 'Mountain-200 Black, 38').
+# It reads distinct values of these columns, and nothing else: no measures, no keys, and no
+# customer columns (the loader keeps no customer names, emails, phones or addresses anyway).
+#
+# Order matters. When the same words match values in two columns ("Canada" is a sales
+# territory region and a country), the column listed first wins and the other is recorded
+# as an alternative, shown to the user as an assumption.
+#
+# A column is used only if it exists in the database, so one file serves every sample.
+entities:
+  # --- AdventureWorks DW ----------------------------------------------------------------
+  - column: DimProduct.EnglishProductName
+    label: product
+  - column: DimProduct.ModelName
+    label: product model
+  - column: DimProductSubcategory.EnglishProductSubcategoryName
+    label: product subcategory
+  - column: DimProductCategory.EnglishProductCategoryName
+    label: product category
+  - column: DimProduct.Color
+    label: colour
+  - column: DimSalesTerritory.SalesTerritoryRegion
+    label: sales territory region
+  - column: DimSalesTerritory.SalesTerritoryCountry
+    label: sales territory country
+  - column: DimSalesTerritory.SalesTerritoryGroup
+    label: sales territory group
+  - column: DimGeography.StateProvinceName
+    label: state or province (of the customer or reseller)
+  - column: DimReseller.ResellerName
+    label: reseller
+  - column: DimReseller.BusinessType
+    label: reseller business type
+  - column: DimPromotion.EnglishPromotionName
+    label: promotion
+  # --- synthetic samples ----------------------------------------------------------------
+  - column: orders.region
+    label: region
+  - column: products.category
+    label: product category
+  - column: customers.segment
+    label: customer segment

@@ -1,0 +1,512 @@
+{
+  "sample": "adventureworks",
+  "note": "Public Microsoft AdventureWorks DW sample (MIT), loaded by samples/load_adventureworks.py. reference_sql writes the dates and values out, so it is computed independently of the resolver and of any model; expected is its result rounded to 4 dp. Regenerate with python -m eval.datasets.golden.make_chat_golden.",
+  "questions": [
+    {
+      "expected_status": "answered",
+      "question": "What were internet sales of Mountain-200 Black, 38 in the Northwest in the last 10 days?",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimProduct",
+        "DimSalesTerritory"
+      ],
+      "expected_filters": {
+        "DimProduct.EnglishProductName": [
+          "Mountain-200 Black, 38"
+        ],
+        "DimSalesTerritory.SalesTerritoryRegion": [
+          "Northwest"
+        ]
+      },
+      "expected_time": [
+        "2014-01-19",
+        "2014-01-28"
+      ],
+      "note": "the last 10 days of the data had no sales of this bike there: the answer must say so",
+      "reference_sql": "SELECT ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f JOIN DimProduct p ON f.ProductKey = p.ProductKey JOIN DimSalesTerritory t ON f.SalesTerritoryKey = t.SalesTerritoryKey WHERE p.EnglishProductName = 'Mountain-200 Black, 38' AND t.SalesTerritoryRegion = 'Northwest' AND f.OrderDate BETWEEN '2014-01-19' AND '2014-01-28'",
+      "expected": [
+        [
+          null
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "What were internet sales of Mountain-200 Black, 38 in the Northwest in 2013?",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimProduct",
+        "DimSalesTerritory"
+      ],
+      "expected_filters": {
+        "DimProduct.EnglishProductName": [
+          "Mountain-200 Black, 38"
+        ],
+        "DimSalesTerritory.SalesTerritoryRegion": [
+          "Northwest"
+        ]
+      },
+      "expected_time": [
+        "2013-01-01",
+        "2013-12-31"
+      ],
+      "reference_sql": "SELECT ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f JOIN DimProduct p ON f.ProductKey = p.ProductKey JOIN DimSalesTerritory t ON f.SalesTerritoryKey = t.SalesTerritoryKey WHERE p.EnglishProductName = 'Mountain-200 Black, 38' AND t.SalesTerritoryRegion = 'Northwest' AND f.OrderDate BETWEEN '2013-01-01' AND '2013-12-31'",
+      "expected": [
+        [
+          142289.38
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "What were internet sales of Mountain-200 Black in 2013?",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimProduct"
+      ],
+      "expected_filters": {
+        "DimProduct.ModelName": [
+          "Mountain-200"
+        ],
+        "DimProduct.Color": [
+          "Black"
+        ]
+      },
+      "expected_time": [
+        "2013-01-01",
+        "2013-12-31"
+      ],
+      "note": "model + colour: three sizes, no single product row is named",
+      "reference_sql": "SELECT ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f JOIN DimProduct p ON f.ProductKey = p.ProductKey WHERE p.ModelName = 'Mountain-200' AND p.Color = 'Black' AND f.OrderDate BETWEEN '2013-01-01' AND '2013-12-31'",
+      "expected": [
+        [
+          2866442.51
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Which product category had the highest reseller sales in 2013?",
+      "expected_metric": "reseller_sales",
+      "expected_tables": [
+        "FactResellerSales",
+        "DimProduct",
+        "DimProductSubcategory",
+        "DimProductCategory"
+      ],
+      "expected_filters": {},
+      "expected_time": [
+        "2013-01-01",
+        "2013-12-31"
+      ],
+      "reference_sql": "SELECT c.EnglishProductCategoryName, ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactResellerSales f JOIN DimProduct p ON f.ProductKey = p.ProductKey JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey JOIN DimProductCategory c ON s.ProductCategoryKey = c.ProductCategoryKey WHERE f.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY 1 ORDER BY 2 DESC LIMIT 1",
+      "expected": [
+        [
+          "Bikes",
+          26942691.15
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Internet sales by sales territory group in Q3 2013",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimSalesTerritory"
+      ],
+      "expected_filters": {},
+      "expected_time": [
+        "2013-07-01",
+        "2013-09-30"
+      ],
+      "reference_sql": "SELECT t.SalesTerritoryGroup, ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f JOIN DimSalesTerritory t ON f.SalesTerritoryKey = t.SalesTerritoryKey WHERE f.OrderDate BETWEEN '2013-07-01' AND '2013-09-30' GROUP BY 1",
+      "expected": [
+        [
+          "Europe",
+          1443547.14
+        ],
+        [
+          "North America",
+          1714102.05
+        ],
+        [
+          "Pacific",
+          1212587.87
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "How many online orders included helmets in France and Germany in 2013?",
+      "expected_metric": "internet_orders",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimProduct",
+        "DimProductSubcategory",
+        "DimSalesTerritory"
+      ],
+      "expected_filters": {
+        "DimProductSubcategory.EnglishProductSubcategoryName": [
+          "Helmets"
+        ],
+        "DimSalesTerritory.SalesTerritoryRegion": [
+          "France",
+          "Germany"
+        ]
+      },
+      "expected_time": [
+        "2013-01-01",
+        "2013-12-31"
+      ],
+      "reference_sql": "SELECT COUNT(DISTINCT f.SalesOrderNumber) AS orders FROM FactInternetSales f JOIN DimProduct p ON f.ProductKey = p.ProductKey JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey JOIN DimSalesTerritory t ON f.SalesTerritoryKey = t.SalesTerritoryKey WHERE s.EnglishProductSubcategoryName = 'Helmets' AND t.SalesTerritoryRegion IN ('France', 'Germany') AND f.OrderDate BETWEEN '2013-01-01' AND '2013-12-31'",
+      "expected": [
+        [
+          1287
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "What was the internet gross margin of Road Bikes in 2012?",
+      "expected_metric": "internet_gross_margin",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimProduct",
+        "DimProductSubcategory"
+      ],
+      "expected_filters": {
+        "DimProductSubcategory.EnglishProductSubcategoryName": [
+          "Road Bikes"
+        ]
+      },
+      "expected_time": [
+        "2012-01-01",
+        "2012-12-31"
+      ],
+      "reference_sql": "SELECT ROUND(SUM(f.SalesAmount - f.TotalProductCost), 2) AS gross_margin FROM FactInternetSales f JOIN DimProduct p ON f.ProductKey = p.ProductKey JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey WHERE s.EnglishProductSubcategoryName = 'Road Bikes' AND f.OrderDate BETWEEN '2012-01-01' AND '2012-12-31'",
+      "expected": [
+        [
+          1376745.45
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Top 5 products by internet sales in 2013",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimProduct"
+      ],
+      "expected_filters": {},
+      "expected_time": [
+        "2013-01-01",
+        "2013-12-31"
+      ],
+      "note": "a product name can have several ProductKey rows (price history): group by name",
+      "reference_sql": "SELECT p.EnglishProductName, ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f JOIN DimProduct p ON f.ProductKey = p.ProductKey WHERE f.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY 1 ORDER BY 2 DESC LIMIT 5",
+      "expected": [
+        [
+          "Mountain-200 Black, 42",
+          970780.77
+        ],
+        [
+          "Mountain-200 Silver, 38",
+          967435.83
+        ],
+        [
+          "Mountain-200 Black, 46",
+          947830.87
+        ],
+        [
+          "Mountain-200 Black, 38",
+          947830.87
+        ],
+        [
+          "Mountain-200 Silver, 46",
+          923356.02
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Reseller sales by business type in 2012",
+      "expected_metric": "reseller_sales",
+      "expected_tables": [
+        "FactResellerSales",
+        "DimReseller"
+      ],
+      "expected_filters": {},
+      "expected_time": [
+        "2012-01-01",
+        "2012-12-31"
+      ],
+      "reference_sql": "SELECT r.BusinessType, ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactResellerSales f JOIN DimReseller r ON f.ResellerKey = r.ResellerKey WHERE f.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY 1",
+      "expected": [
+        [
+          "Specialty Bike Shop",
+          2006751.39
+        ],
+        [
+          "Value Added Reseller",
+          12996239.12
+        ],
+        [
+          "Warehouse",
+          13190641.03
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Internet sales by month in 2013",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales"
+      ],
+      "expected_filters": {},
+      "expected_time": [
+        "2013-01-01",
+        "2013-12-31"
+      ],
+      "reference_sql": "SELECT substr(f.OrderDate, 1, 7) AS month, ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f WHERE f.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY 1",
+      "expected": [
+        [
+          "2013-01",
+          857689.91
+        ],
+        [
+          "2013-02",
+          771348.74
+        ],
+        [
+          "2013-03",
+          1049907.39
+        ],
+        [
+          "2013-04",
+          1046022.77
+        ],
+        [
+          "2013-05",
+          1284592.93
+        ],
+        [
+          "2013-06",
+          1643177.78
+        ],
+        [
+          "2013-07",
+          1371675.81
+        ],
+        [
+          "2013-08",
+          1551065.56
+        ],
+        [
+          "2013-09",
+          1447495.69
+        ],
+        [
+          "2013-10",
+          1673293.41
+        ],
+        [
+          "2013-11",
+          1780920.06
+        ],
+        [
+          "2013-12",
+          1874360.29
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Reseller units of Mountain-200 last quarter",
+      "expected_metric": "reseller_units",
+      "expected_tables": [
+        "FactResellerSales",
+        "DimProduct"
+      ],
+      "expected_filters": {
+        "DimProduct.ModelName": [
+          "Mountain-200"
+        ]
+      },
+      "expected_time": [
+        "2013-10-01",
+        "2013-11-29"
+      ],
+      "note": "reseller data ends 2013-11-29, so its 'last quarter' differs from internet's",
+      "reference_sql": "SELECT SUM(f.OrderQuantity) AS units FROM FactResellerSales f JOIN DimProduct p ON f.ProductKey = p.ProductKey WHERE p.ModelName = 'Mountain-200' AND f.OrderDate BETWEEN '2013-10-01' AND '2013-11-29'",
+      "expected": [
+        [
+          976
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Internet sales in California in 2013",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimCustomer",
+        "DimGeography"
+      ],
+      "expected_filters": {
+        "DimGeography.StateProvinceName": [
+          "California"
+        ]
+      },
+      "expected_time": [
+        "2013-01-01",
+        "2013-12-31"
+      ],
+      "note": "the customer's state: FactInternetSales \u2192 DimCustomer \u2192 DimGeography",
+      "reference_sql": "SELECT ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f JOIN DimCustomer cu ON f.CustomerKey = cu.CustomerKey JOIN DimGeography g ON cu.GeographyKey = g.GeographyKey WHERE g.StateProvinceName = 'California' AND f.OrderDate BETWEEN '2013-01-01' AND '2013-12-31'",
+      "expected": [
+        [
+          3355851.39
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Which sales territory region had the highest reseller gross margin in 2013?",
+      "expected_metric": "reseller_gross_margin",
+      "expected_tables": [
+        "FactResellerSales",
+        "DimSalesTerritory"
+      ],
+      "expected_filters": {},
+      "expected_time": [
+        "2013-01-01",
+        "2013-12-31"
+      ],
+      "reference_sql": "SELECT t.SalesTerritoryRegion, ROUND(SUM(f.SalesAmount - f.TotalProductCost), 2) AS gross_margin FROM FactResellerSales f JOIN DimSalesTerritory t ON f.SalesTerritoryKey = t.SalesTerritoryKey WHERE f.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY 1 ORDER BY 2 DESC LIMIT 1",
+      "expected": [
+        [
+          "Central",
+          14849.1
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Internet sales last month",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales"
+      ],
+      "expected_filters": {},
+      "expected_time": [
+        "2014-01-01",
+        "2014-01-28"
+      ],
+      "note": "the latest month is partial (the data stops on 28 January): the answer says so",
+      "reference_sql": "SELECT ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f WHERE f.OrderDate BETWEEN '2014-01-01' AND '2014-01-28'",
+      "expected": [
+        [
+          45694.72
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "What were sales in Canada last month?",
+      "metric": "internet_sales",
+      "expected_metric": "internet_sales",
+      "expected_tables": [
+        "FactInternetSales",
+        "DimSalesTerritory"
+      ],
+      "expected_filters": {
+        "DimSalesTerritory.SalesTerritoryRegion": [
+          "Canada"
+        ]
+      },
+      "expected_time": [
+        "2014-01-01",
+        "2014-01-28"
+      ],
+      "note": "the follow-up after the clarifying question: the user chose internet sales",
+      "reference_sql": "SELECT ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactInternetSales f JOIN DimSalesTerritory t ON f.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryRegion = 'Canada' AND f.OrderDate BETWEEN '2014-01-01' AND '2014-01-28'",
+      "expected": [
+        [
+          9457.62
+        ]
+      ]
+    },
+    {
+      "expected_status": "answered",
+      "question": "Reseller sales in North America by sales territory country in 2012",
+      "expected_metric": "reseller_sales",
+      "expected_tables": [
+        "FactResellerSales",
+        "DimSalesTerritory"
+      ],
+      "expected_filters": {
+        "DimSalesTerritory.SalesTerritoryGroup": [
+          "North America"
+        ]
+      },
+      "expected_time": [
+        "2012-01-01",
+        "2012-12-31"
+      ],
+      "reference_sql": "SELECT t.SalesTerritoryCountry, ROUND(SUM(f.SalesAmount), 2) AS sales FROM FactResellerSales f JOIN DimSalesTerritory t ON f.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryGroup = 'North America' AND f.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY 1",
+      "expected": [
+        [
+          "Canada",
+          5478100.19
+        ],
+        [
+          "United States",
+          19621386.81
+        ]
+      ]
+    },
+    {
+      "question": "What were sales in Canada last month?",
+      "expected_status": "clarify",
+      "expected_options": [
+        "internet_sales",
+        "reseller_sales"
+      ],
+      "note": "'sales' is two governed metrics here; ask, never pick one"
+    },
+    {
+      "question": "How many orders did we get in 2013?",
+      "expected_status": "clarify",
+      "expected_options": [
+        "internet_orders",
+        "reseller_orders"
+      ]
+    },
+    {
+      "question": "Internet sales of Atlas Laptop in the North region in the last 10 days",
+      "expected_status": "not_understood",
+      "note": "no such product; 'North' is not a region (Northwest, Northeast are): ask, never drop"
+    },
+    {
+      "question": "What is the weather in Paris?",
+      "expected_status": "not_understood"
+    },
+    {
+      "question": "Internet sales by reseller in 2013",
+      "expected_status": "refused",
+      "note": "resellers are reachable from internet sales only back through a shared dimension: a fan trap, refused"
+    },
+    {
+      "question": "Internet sales in 2013; DROP TABLE DimProduct",
+      "expected_status": "not_understood",
+      "note": "injected words match nothing, so no model is called"
+    }
+  ]
+}

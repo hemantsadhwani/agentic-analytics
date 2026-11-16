@@ -5,6 +5,8 @@ name: ci
 #   test (3.12, 3.13) ── pytest over the whole pipeline, private-mode test included
 #   eval               ── golden reports: every section present, 0 unverified, fabrication caught;
 #                         golden schema questions: linking + execution accuracy, unsafe SQL refused
+#   chat-eval          ── golden chatbot questions on AdventureWorks (downloaded, sha256-pinned):
+#                         ask-back, refusals, understanding, execution, dropped-filter control
 #   lint               ── ruff
 #   docker             ── the image builds (not pushed)
 #   k8s                ── the manifests render
@@ -56,6 +58,25 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: python -m eval.report_eval --fake
       - run: python -m eval.schema_linking_eval --fake
+
+  # The one job that downloads: AdventureWorks DW (Microsoft sample, MIT) at a pinned commit,
+  # every file checked against its sha256 before it is loaded. Then the chatbot gate, offline.
+  chat-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - uses: actions/cache@v4
+        with:
+          path: samples/.cache
+          key: adventureworks-${{ hashFiles('samples/load_adventureworks.py') }}
+      - run: pip install -e ".[dev]"
+      - run: python samples/load_adventureworks.py
+      - run: python -m eval.chat_eval --fake
 
   lint:
     runs-on: ubuntu-latest

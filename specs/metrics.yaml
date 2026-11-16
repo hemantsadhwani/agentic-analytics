@@ -1,4 +1,5 @@
-# Governed metrics: the one agreed definition of each business number (SYNTHETIC samples).
+# Governed metrics: the one agreed definition of each business number (synthetic samples
+# and the public AdventureWorks DW sample).
 #
 # The schema graph (agentic_reporting/schema_graph.py) loads a metric into a database's graph
 # only if its table and every column it derives from exist there, so one file serves both
@@ -77,3 +78,116 @@ metrics:
     synonyms: [sev1 share, share of sev1, sev1 rate, sev1 percentage, critical incident share]
     owner: SRE leadership (synthetic owner)
     description: Percent of incidents whose severity is SEV1 (the worst).
+
+  # --- samples/adventureworks.sqlite (Microsoft AdventureWorks DW, MIT; public sample) ----
+  # Two sales channels, two fact tables. A plain "sales" is ambiguous here, so it is listed
+  # under `ambiguous:` below and the bot asks which channel is meant.
+  - name: internet_sales
+    label: Internet sales (USD)
+    table: FactInternetSales
+    expression: ROUND(SUM(FactInternetSales.SalesAmount), 2)
+    grain: order line; sum over any dimension (product, territory, customer, promotion) or period
+    time_column: FactInternetSales.OrderDate
+    derives_from: [FactInternetSales.SalesAmount]
+    synonyms: [internet sales, online sales, web sales, internet revenue, online revenue,
+               ecommerce sales, internet sale amount]
+    owner: Digital sales (sample owner)
+    description: Sales amount of internet orders, after discounts, before tax and freight.
+
+  - name: internet_orders
+    label: Internet orders
+    table: FactInternetSales
+    expression: COUNT(DISTINCT FactInternetSales.SalesOrderNumber)
+    grain: one order per SalesOrderNumber (an order has several lines); count over any dimension or period
+    time_column: FactInternetSales.OrderDate
+    derives_from: [FactInternetSales.SalesOrderNumber]
+    synonyms: [internet orders, online orders, web orders, number of internet orders,
+               number of online orders]
+    owner: Digital sales (sample owner)
+    description: Number of distinct internet orders (not order lines).
+
+  - name: internet_units
+    label: Internet units sold
+    table: FactInternetSales
+    expression: SUM(FactInternetSales.OrderQuantity)
+    grain: order line; sum over any dimension or period
+    time_column: FactInternetSales.OrderDate
+    derives_from: [FactInternetSales.OrderQuantity]
+    synonyms: [internet units, online units, units sold online, units sold on the internet,
+               online quantity]
+    owner: Digital sales (sample owner)
+    description: Units sold through internet orders.
+
+  - name: internet_gross_margin
+    label: Internet gross margin (USD)
+    table: FactInternetSales
+    expression: ROUND(SUM(FactInternetSales.SalesAmount - FactInternetSales.TotalProductCost), 2)
+    grain: order line; sum over any dimension or period
+    time_column: FactInternetSales.OrderDate
+    derives_from: [FactInternetSales.SalesAmount, FactInternetSales.TotalProductCost]
+    synonyms: [internet gross margin, online gross margin, internet margin, online margin,
+               internet profit, online profit, internet gross profit, online gross profit]
+    owner: Finance analytics (sample owner)
+    description: Sales amount minus standard product cost, internet orders.
+
+  - name: reseller_sales
+    label: Reseller sales (USD)
+    table: FactResellerSales
+    expression: ROUND(SUM(FactResellerSales.SalesAmount), 2)
+    grain: order line; sum over any dimension (product, territory, reseller, promotion) or period
+    time_column: FactResellerSales.OrderDate
+    derives_from: [FactResellerSales.SalesAmount]
+    synonyms: [reseller sales, reseller revenue, channel sales, wholesale sales, dealer sales,
+               store sales]
+    owner: Channel sales (sample owner)
+    description: Sales amount of reseller (bike shop) orders, after discounts, before tax.
+
+  - name: reseller_orders
+    label: Reseller orders
+    table: FactResellerSales
+    expression: COUNT(DISTINCT FactResellerSales.SalesOrderNumber)
+    grain: one order per SalesOrderNumber; count over any dimension or period
+    time_column: FactResellerSales.OrderDate
+    derives_from: [FactResellerSales.SalesOrderNumber]
+    synonyms: [reseller orders, dealer orders, channel orders, number of reseller orders]
+    owner: Channel sales (sample owner)
+    description: Number of distinct reseller orders (not order lines).
+
+  - name: reseller_units
+    label: Reseller units sold
+    table: FactResellerSales
+    expression: SUM(FactResellerSales.OrderQuantity)
+    grain: order line; sum over any dimension or period
+    time_column: FactResellerSales.OrderDate
+    derives_from: [FactResellerSales.OrderQuantity]
+    synonyms: [reseller units, units sold to resellers, dealer units, reseller quantity]
+    owner: Channel sales (sample owner)
+    description: Units sold through reseller orders.
+
+  - name: reseller_gross_margin
+    label: Reseller gross margin (USD)
+    table: FactResellerSales
+    expression: ROUND(SUM(FactResellerSales.SalesAmount - FactResellerSales.TotalProductCost), 2)
+    grain: order line; sum over any dimension or period
+    time_column: FactResellerSales.OrderDate
+    derives_from: [FactResellerSales.SalesAmount, FactResellerSales.TotalProductCost]
+    synonyms: [reseller gross margin, reseller margin, reseller profit, reseller gross profit,
+               dealer margin]
+    owner: Finance analytics (sample owner)
+    description: Sales amount minus standard product cost, reseller orders.
+
+# Words that name several governed metrics in one database. Used only when no specific
+# metric matched and every option exists in that database; the bot then asks, it never guesses.
+ambiguous:
+  - phrases: [sales, revenue, turnover, sold, sell, sale amount]
+    options: [internet_sales, reseller_sales]
+    ask: This warehouse has two sales channels. Which sales do you mean?
+  - phrases: [orders, order count, number of orders]
+    options: [internet_orders, reseller_orders]
+    ask: Internet orders or reseller orders?
+  - phrases: [units, quantity, units sold]
+    options: [internet_units, reseller_units]
+    ask: Units sold online or to resellers?
+  - phrases: [margin, gross margin, profit, gross profit]
+    options: [internet_gross_margin, reseller_gross_margin]
+    ask: Gross margin on internet or reseller sales?

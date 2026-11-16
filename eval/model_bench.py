@@ -143,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
 
     goldens = [load_golden(p) for p in sorted(GOLDEN_DIR.glob("*.json"))
-               if not p.name.startswith("schema_")]
+               if not p.name.startswith(("schema_", "chat_"))]
     work = Path(tempfile.mkdtemp(prefix="model_bench_"))
     dbs = {g["sample"]: build_sample(g["sample"], work) for g in goldens}
     rows = []

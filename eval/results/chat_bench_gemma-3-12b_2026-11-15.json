@@ -1,0 +1,1925 @@
+{
+ "provider": "bedrock-converse/google.gemma-3-12b-it",
+ "repeats": 3,
+ "summary": {
+  "questions": 66,
+  "behaved": 66,
+  "answered_questions": 48,
+  "understood": 48,
+  "execution_correct": 48,
+  "sql_repaired": 19,
+  "model_answers": 15,
+  "model_answers_checked_ok": 15,
+  "input_tokens": 59504,
+  "output_tokens": 14333,
+  "cost_usd": 0.011418000000000001,
+  "cost_per_answered_usd": 0.000238,
+  "p50_latency_ms": 2196
+ },
+ "runs": [
+  [
+   {
+    "question": "What were internet sales of Mountain-200 Black, 38 in the Northwest in the last 10 days?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "No internet sales (usd) matched for 2014-01-19 to 2014-01-28.",
+    "sql": "SELECT DimProduct.EnglishProductName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2014-01-19' AND '2014-01-28' GROUP BY DimProduct.EnglishProductName",
+    "rows": [],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.EnglishProductName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2014-01-19' AND '2014-01-28' GROUP BY DimProduct.EnglishProductName, internet_sales",
+    "input_tokens": 1761,
+    "output_tokens": 374,
+    "cost_usd": 0.00032087,
+    "latency_ms": 2880,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were internet sales of Mountain-200 Black, 38 in the Northwest in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200 Black, 38: Internet sales (USD) 142,289.4.",
+    "sql": "SELECT DimProduct.EnglishProductName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.EnglishProductName",
+    "rows": [
+     [
+      "Mountain-200 Black, 38",
+      142289.38
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.EnglishProductName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.EnglishProductName, internet_sales",
+    "input_tokens": 1759,
+    "output_tokens": 361,
+    "cost_usd": 0.00031623,
+    "latency_ms": 2446,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were internet sales of Mountain-200 Black in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200: Internet sales (USD) 2,866,442.5.",
+    "sql": "SELECT DimProduct.ModelName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND DimProduct.Color = 'Black' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.ModelName",
+    "rows": [
+     [
+      "Mountain-200",
+      2866442.51
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.ModelName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND DimProduct.Color = 'Black' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.ModelName, internet_sales",
+    "input_tokens": 1594,
+    "output_tokens": 323,
+    "cost_usd": 0.00028516,
+    "latency_ms": 2196,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Which product category had the highest reseller sales in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Bikes: Reseller sales (USD) 26,942,691.1.",
+    "sql": "SELECT DimProductCategory.EnglishProductCategoryName, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales JOIN DimProduct ON FactResellerSales.ProductKey = DimProduct.ProductKey JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey JOIN DimProductCategory ON DimProductSubcategory.ProductCategoryKey = DimProductCategory.ProductCategoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProductCategory.EnglishProductCategoryName ORDER BY reseller_sales DESC LIMIT 1",
+    "rows": [
+     [
+      "Bikes",
+      26942691.15
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 793,
+    "output_tokens": 198,
+    "cost_usd": 0.00015455000000000002,
+    "latency_ms": 1314,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales by sales territory group in Q3 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet sales were 1443547 in Europe, 1714102 in North America, and 1212588 in Pacific.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryGroup, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales INNER JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactInternetSales.OrderDate BETWEEN '2013-07-01' AND '2013-09-30' GROUP BY DimSalesTerritory.SalesTerritoryGroup",
+    "rows": [
+     [
+      "Europe",
+      1443547.14
+     ],
+     [
+      "North America",
+      1714102.05
+     ],
+     [
+      "Pacific",
+      1212587.87
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 1122,
+    "output_tokens": 273,
+    "cost_usd": 0.00021624000000000003,
+    "latency_ms": 2385,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "How many online orders included helmets in France and Germany in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet orders 1,287.",
+    "sql": "SELECT COUNT(DISTINCT FactInternetSales.SalesOrderNumber) AS internet_orders FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProductSubcategory.EnglishProductSubcategoryName = 'Helmets' AND DimSalesTerritory.SalesTerritoryRegion IN ('France', 'Germany') AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31'",
+    "rows": [
+     [
+      1287
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 835,
+    "output_tokens": 199,
+    "cost_usd": 0.00015951,
+    "latency_ms": 1328,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What was the internet gross margin of Road Bikes in 2012?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Road Bikes: Internet gross margin (USD) 1,376,745.4.",
+    "sql": "SELECT DimProductSubcategory.EnglishProductSubcategoryName, ROUND(SUM(FactInternetSales.SalesAmount - FactInternetSales.TotalProductCost), 2) AS internet_gross_margin FROM FactInternetSales INNER JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey INNER JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey WHERE DimProductSubcategory.EnglishProductSubcategoryName = 'Road Bikes' AND FactInternetSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimProductSubcategory.EnglishProductSubcategoryName",
+    "rows": [
+     [
+      "Road Bikes",
+      1376745.45
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 769,
+    "output_tokens": 201,
+    "cost_usd": 0.00015293000000000001,
+    "latency_ms": 1325,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Top 5 products by internet sales in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Top 5 products by internet sales in 2013 are Mountain-200 Black, 42 with 970780.77, Mountain-200 Silver, 38 with 967435.83, Mountain-200 Black, 46 with 947830.87, Mountain-200 Black, 38 with 947830.87, and Mountain-200 Silver, 46 with 923356.02.",
+    "sql": "SELECT T1.EnglishProductName, ROUND(SUM(T2.SalesAmount), 2) AS internet_sales FROM DimProduct AS T1 INNER JOIN FactInternetSales AS T2 ON T1.ProductKey = T2.ProductKey WHERE T2.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY T1.EnglishProductName ORDER BY internet_sales DESC LIMIT 5",
+    "rows": [
+     [
+      "Mountain-200 Black, 42",
+      970780.77
+     ],
+     [
+      "Mountain-200 Silver, 38",
+      967435.83
+     ],
+     [
+      "Mountain-200 Black, 46",
+      947830.87
+     ],
+     [
+      "Mountain-200 Black, 38",
+      947830.87
+     ],
+     [
+      "Mountain-200 Silver, 46",
+      923356.02
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: T2.internet_sales"
+    ],
+    "first_sql": "SELECT T1.EnglishProductName, T2.internet_sales FROM DimProduct AS T1 INNER JOIN FactInternetSales AS T2 ON T1.ProductKey = T2.ProductKey WHERE T2.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY T1.EnglishProductName ORDER BY T2.internet_sales DESC LIMIT 5",
+    "input_tokens": 2038,
+    "output_tokens": 588,
+    "cost_usd": 0.00042410000000000006,
+    "latency_ms": 3858,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller sales by business type in 2012",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Warehouse sales were 13190641, Value Added Reseller sales were 12996239, and Specialty Bike Shop sales were 2006751 in 2012.",
+    "sql": "SELECT DimReseller.BusinessType, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales JOIN DimReseller ON FactResellerSales.ResellerKey = DimReseller.ResellerKey WHERE FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimReseller.BusinessType ORDER BY reseller_sales DESC",
+    "rows": [
+     [
+      "Warehouse",
+      13190641.03
+     ],
+     [
+      "Value Added Reseller",
+      12996239.12
+     ],
+     [
+      "Specialty Bike Shop",
+      2006751.39
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: reseller_sales"
+    ],
+    "first_sql": "SELECT DimReseller.BusinessType, reseller_sales FROM FactResellerSales JOIN DimReseller ON FactResellerSales.ResellerKey = DimReseller.ResellerKey WHERE FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimReseller.BusinessType ORDER BY reseller_sales DESC",
+    "input_tokens": 1947,
+    "output_tokens": 428,
+    "cost_usd": 0.00035968999999999997,
+    "latency_ms": 3551,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales by month in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet sales in 2013 ranged from 771348.74 to 1874360.29.",
+    "sql": "SELECT substr(FactInternetSales.OrderDate, 1, 7), ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales WHERE FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY substr(FactInternetSales.OrderDate, 1, 7) ORDER BY substr(FactInternetSales.OrderDate, 1, 7)",
+    "rows": [
+     [
+      "2013-01",
+      857689.91
+     ],
+     [
+      "2013-02",
+      771348.74
+     ],
+     [
+      "2013-03",
+      1049907.39
+     ],
+     [
+      "2013-04",
+      1046022.77
+     ],
+     [
+      "2013-05",
+      1284592.93
+     ],
+     [
+      "2013-06",
+      1643177.78
+     ],
+     [
+      "2013-07",
+      1371675.81
+     ],
+     [
+      "2013-08",
+      1551065.56
+     ],
+     [
+      "2013-09",
+      1447495.69
+     ],
+     [
+      "2013-10",
+      1673293.41
+     ],
+     [
+      "2013-11",
+      1780920.06
+     ],
+     [
+      "2013-12",
+      1874360.29
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 1456,
+    "output_tokens": 536,
+    "cost_usd": 0.00034240000000000003,
+    "latency_ms": 3493,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller units of Mountain-200 last quarter",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200: Reseller units sold 976.",
+    "sql": "SELECT DimProduct.ModelName, SUM(FactResellerSales.OrderQuantity) AS reseller_units FROM FactResellerSales INNER JOIN DimProduct ON FactResellerSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND FactResellerSales.OrderDate BETWEEN '2013-10-01' AND '2013-11-29' GROUP BY DimProduct.ModelName",
+    "rows": [
+     [
+      "Mountain-200",
+      976
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 680,
+    "output_tokens": 166,
+    "cost_usd": 0.00013124,
+    "latency_ms": 1111,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales in California in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "California: Internet sales (USD) 3,355,851.4.",
+    "sql": "SELECT DimGeography.StateProvinceName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales INNER JOIN DimCustomer ON FactInternetSales.CustomerKey = DimCustomer.CustomerKey INNER JOIN DimGeography ON DimCustomer.GeographyKey = DimGeography.GeographyKey WHERE DimGeography.StateProvinceName = 'California' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimGeography.StateProvinceName",
+    "rows": [
+     [
+      "California",
+      3355851.39
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 768,
+    "output_tokens": 166,
+    "cost_usd": 0.00014092000000000003,
+    "latency_ms": 1320,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Which sales territory region had the highest reseller gross margin in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Central: Reseller gross margin (USD) 14,849.1.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, ROUND(SUM(FactResellerSales.SalesAmount - FactResellerSales.TotalProductCost), 2) AS reseller_gross_margin FROM FactResellerSales JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY reseller_gross_margin DESC LIMIT 1",
+    "rows": [
+     [
+      "Central",
+      14849.1
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: reseller_gross_margin"
+    ],
+    "first_sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, reseller_gross_margin FROM FactResellerSales JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY reseller_gross_margin DESC LIMIT 1",
+    "input_tokens": 1565,
+    "output_tokens": 331,
+    "cost_usd": 0.00028469,
+    "latency_ms": 2200,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales last month",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "2014-01: Internet sales (USD) 45,694.7.",
+    "sql": "SELECT substr(FactInternetSales.OrderDate, 1, 7), ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales WHERE FactInternetSales.OrderDate BETWEEN '2014-01-01' AND '2014-01-28' GROUP BY substr(FactInternetSales.OrderDate, 1, 7) ORDER BY substr(FactInternetSales.OrderDate, 1, 7) DESC LIMIT 1",
+    "rows": [
+     [
+      "2014-01",
+      45694.72
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 627,
+    "output_tokens": 146,
+    "cost_usd": 0.00011861,
+    "latency_ms": 983,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were sales in Canada last month?",
+    "metric_choice": "internet_sales",
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Canada: Internet sales (USD) 9,457.6.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales INNER JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimSalesTerritory.SalesTerritoryRegion = 'Canada' AND FactInternetSales.OrderDate BETWEEN '2014-01-01' AND '2014-01-28' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY internet_sales DESC LIMIT 1",
+    "rows": [
+     [
+      "Canada",
+      9457.62
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 707,
+    "output_tokens": 168,
+    "cost_usd": 0.00013488999999999998,
+    "latency_ms": 1121,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller sales in North America by sales territory country in 2012",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Reseller sales in North America were 5478100 in Canada and 19621387 in the United States.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryCountry, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales INNER JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimSalesTerritory.SalesTerritoryGroup = 'North America' AND FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimSalesTerritory.SalesTerritoryCountry",
+    "rows": [
+     [
+      "Canada",
+      5478100.19
+     ],
+     [
+      "United States",
+      19621386.81
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 1139,
+    "output_tokens": 267,
+    "cost_usd": 0.00021607,
+    "latency_ms": 1849,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were sales in Canada last month?",
+    "metric_choice": null,
+    "status": "clarify",
+    "expected_status": "clarify",
+    "behaved": true,
+    "text": "This warehouse has two sales channels. Which sales do you mean?",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 1
+   },
+   {
+    "question": "How many orders did we get in 2013?",
+    "metric_choice": null,
+    "status": "clarify",
+    "expected_status": "clarify",
+    "behaved": true,
+    "text": "Internet orders or reseller orders?",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 0
+   },
+   {
+    "question": "Internet sales of Atlas Laptop in the North region in the last 10 days",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'Atlas Laptop' (nothing similar in this data), 'North' (closest: Northwest (sales territory region); Northeast (sales territory region); Nord (state or province (of the customer or reseller)); Shorts (product subcategory)). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 4
+   },
+   {
+    "question": "What is the weather in Paris?",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'weather' (nothing similar in this data), 'Paris' (closest: Seine (Paris) (state or province (of the customer or reseller))). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 2
+   },
+   {
+    "question": "Internet sales by reseller in 2013",
+    "metric_choice": null,
+    "status": "refused",
+    "expected_status": "refused",
+    "behaved": true,
+    "text": "DimReseller, FactResellerSales cannot be combined with Internet sales (USD): the only join goes back through a shared dimension to another fact table, which repeats rows and inflates the total. Ask it a different way, or ask the data owner for a governed metric that does this.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 0
+   },
+   {
+    "question": "Internet sales in 2013; DROP TABLE DimProduct",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'DROP TABLE DimProduct' (nothing similar in this data). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 7
+   }
+  ],
+  [
+   {
+    "question": "What were internet sales of Mountain-200 Black, 38 in the Northwest in the last 10 days?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "No internet sales (usd) matched for 2014-01-19 to 2014-01-28.",
+    "sql": "SELECT DimProduct.EnglishProductName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2014-01-19' AND '2014-01-28' GROUP BY DimProduct.EnglishProductName",
+    "rows": [],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.EnglishProductName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2014-01-19' AND '2014-01-28' GROUP BY DimProduct.EnglishProductName, internet_sales",
+    "input_tokens": 1761,
+    "output_tokens": 374,
+    "cost_usd": 0.00032087,
+    "latency_ms": 2451,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were internet sales of Mountain-200 Black, 38 in the Northwest in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200 Black, 38: Internet sales (USD) 142,289.4.",
+    "sql": "SELECT DimProduct.EnglishProductName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.EnglishProductName",
+    "rows": [
+     [
+      "Mountain-200 Black, 38",
+      142289.38
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.EnglishProductName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.EnglishProductName, internet_sales",
+    "input_tokens": 1759,
+    "output_tokens": 361,
+    "cost_usd": 0.00031623,
+    "latency_ms": 2453,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were internet sales of Mountain-200 Black in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200: Internet sales (USD) 2,866,442.5.",
+    "sql": "SELECT DimProduct.ModelName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND DimProduct.Color = 'Black' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.ModelName",
+    "rows": [
+     [
+      "Mountain-200",
+      2866442.51
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.ModelName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND DimProduct.Color = 'Black' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.ModelName, internet_sales",
+    "input_tokens": 1594,
+    "output_tokens": 323,
+    "cost_usd": 0.00028516,
+    "latency_ms": 2167,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Which product category had the highest reseller sales in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Bikes: Reseller sales (USD) 26,942,691.1.",
+    "sql": "SELECT DimProductCategory.EnglishProductCategoryName, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales JOIN DimProduct ON FactResellerSales.ProductKey = DimProduct.ProductKey JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey JOIN DimProductCategory ON DimProductSubcategory.ProductCategoryKey = DimProductCategory.ProductCategoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProductCategory.EnglishProductCategoryName ORDER BY reseller_sales DESC LIMIT 1",
+    "rows": [
+     [
+      "Bikes",
+      26942691.15
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 793,
+    "output_tokens": 198,
+    "cost_usd": 0.00015455000000000002,
+    "latency_ms": 1389,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales by sales territory group in Q3 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet sales were 1443547.14 in Europe, 1714102.05 in North America, and 1212587.87 in Pacific during Q3 2013.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryGroup, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales INNER JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactInternetSales.OrderDate BETWEEN '2013-07-01' AND '2013-09-30' GROUP BY DimSalesTerritory.SalesTerritoryGroup",
+    "rows": [
+     [
+      "Europe",
+      1443547.14
+     ],
+     [
+      "North America",
+      1714102.05
+     ],
+     [
+      "Pacific",
+      1212587.87
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 1122,
+    "output_tokens": 299,
+    "cost_usd": 0.00022508,
+    "latency_ms": 2004,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "How many online orders included helmets in France and Germany in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet orders 1,287.",
+    "sql": "SELECT COUNT(DISTINCT FactInternetSales.SalesOrderNumber) AS internet_orders FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProductSubcategory.EnglishProductSubcategoryName = 'Helmets' AND DimSalesTerritory.SalesTerritoryRegion IN ('France', 'Germany') AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31'",
+    "rows": [
+     [
+      1287
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 835,
+    "output_tokens": 199,
+    "cost_usd": 0.00015951,
+    "latency_ms": 1324,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What was the internet gross margin of Road Bikes in 2012?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Road Bikes: Internet gross margin (USD) 1,376,745.4.",
+    "sql": "SELECT DimProductSubcategory.EnglishProductSubcategoryName, ROUND(SUM(FactInternetSales.SalesAmount - FactInternetSales.TotalProductCost), 2) AS internet_gross_margin FROM FactInternetSales INNER JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey INNER JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey WHERE DimProductSubcategory.EnglishProductSubcategoryName = 'Road Bikes' AND FactInternetSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimProductSubcategory.EnglishProductSubcategoryName",
+    "rows": [
+     [
+      "Road Bikes",
+      1376745.45
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 769,
+    "output_tokens": 202,
+    "cost_usd": 0.00015327,
+    "latency_ms": 1341,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Top 5 products by internet sales in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "The top 5 products by internet sales are Mountain-200 Black, 42 with 970780.77, Mountain-200 Silver, 38 with 967435.83, Mountain-200 Black, 46 with 947830.87, Mountain-200 Black, 38 with 947830.87, and Mountain-200 Silver, 46 with 923356.02.",
+    "sql": "SELECT T1.EnglishProductName, ROUND(SUM(T2.SalesAmount), 2) AS internet_sales FROM DimProduct AS T1 INNER JOIN FactInternetSales AS T2 ON T1.ProductKey = T2.ProductKey WHERE T2.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY T1.EnglishProductName ORDER BY internet_sales DESC LIMIT 5",
+    "rows": [
+     [
+      "Mountain-200 Black, 42",
+      970780.77
+     ],
+     [
+      "Mountain-200 Silver, 38",
+      967435.83
+     ],
+     [
+      "Mountain-200 Black, 46",
+      947830.87
+     ],
+     [
+      "Mountain-200 Black, 38",
+      947830.87
+     ],
+     [
+      "Mountain-200 Silver, 46",
+      923356.02
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: T2.internet_sales"
+    ],
+    "first_sql": "SELECT T1.EnglishProductName, T2.internet_sales FROM DimProduct AS T1 INNER JOIN FactInternetSales AS T2 ON T1.ProductKey = T2.ProductKey WHERE T2.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY T1.EnglishProductName ORDER BY T2.internet_sales DESC LIMIT 5",
+    "input_tokens": 2038,
+    "output_tokens": 583,
+    "cost_usd": 0.0004224000000000001,
+    "latency_ms": 3951,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller sales by business type in 2012",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Warehouse sales were 13190641, Value Added Reseller sales were 12996239, and Specialty Bike Shop sales were 2006751 in 2012.",
+    "sql": "SELECT DimReseller.BusinessType, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales JOIN DimReseller ON FactResellerSales.ResellerKey = DimReseller.ResellerKey WHERE FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimReseller.BusinessType ORDER BY reseller_sales DESC",
+    "rows": [
+     [
+      "Warehouse",
+      13190641.03
+     ],
+     [
+      "Value Added Reseller",
+      12996239.12
+     ],
+     [
+      "Specialty Bike Shop",
+      2006751.39
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: reseller_sales"
+    ],
+    "first_sql": "SELECT DimReseller.BusinessType, reseller_sales FROM FactResellerSales JOIN DimReseller ON FactResellerSales.ResellerKey = DimReseller.ResellerKey WHERE FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimReseller.BusinessType ORDER BY reseller_sales DESC",
+    "input_tokens": 1947,
+    "output_tokens": 428,
+    "cost_usd": 0.00035968999999999997,
+    "latency_ms": 2892,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales by month in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet sales in 2013 ranged from 771348.74 to 1874360.29.",
+    "sql": "SELECT substr(FactInternetSales.OrderDate, 1, 7), ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales WHERE FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY substr(FactInternetSales.OrderDate, 1, 7) ORDER BY substr(FactInternetSales.OrderDate, 1, 7)",
+    "rows": [
+     [
+      "2013-01",
+      857689.91
+     ],
+     [
+      "2013-02",
+      771348.74
+     ],
+     [
+      "2013-03",
+      1049907.39
+     ],
+     [
+      "2013-04",
+      1046022.77
+     ],
+     [
+      "2013-05",
+      1284592.93
+     ],
+     [
+      "2013-06",
+      1643177.78
+     ],
+     [
+      "2013-07",
+      1371675.81
+     ],
+     [
+      "2013-08",
+      1551065.56
+     ],
+     [
+      "2013-09",
+      1447495.69
+     ],
+     [
+      "2013-10",
+      1673293.41
+     ],
+     [
+      "2013-11",
+      1780920.06
+     ],
+     [
+      "2013-12",
+      1874360.29
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 1456,
+    "output_tokens": 536,
+    "cost_usd": 0.00034240000000000003,
+    "latency_ms": 4929,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller units of Mountain-200 last quarter",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200: Reseller units sold 976.",
+    "sql": "SELECT DimProduct.ModelName, SUM(FactResellerSales.OrderQuantity) AS reseller_units FROM FactResellerSales INNER JOIN DimProduct ON FactResellerSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND FactResellerSales.OrderDate BETWEEN '2013-10-01' AND '2013-11-29' GROUP BY DimProduct.ModelName",
+    "rows": [
+     [
+      "Mountain-200",
+      976
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 680,
+    "output_tokens": 166,
+    "cost_usd": 0.00013124,
+    "latency_ms": 1105,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales in California in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "California: Internet sales (USD) 3,355,851.4.",
+    "sql": "SELECT DimGeography.StateProvinceName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales INNER JOIN DimCustomer ON FactInternetSales.CustomerKey = DimCustomer.CustomerKey INNER JOIN DimGeography ON DimCustomer.GeographyKey = DimGeography.GeographyKey WHERE DimGeography.StateProvinceName = 'California' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimGeography.StateProvinceName",
+    "rows": [
+     [
+      "California",
+      3355851.39
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 768,
+    "output_tokens": 166,
+    "cost_usd": 0.00014092000000000003,
+    "latency_ms": 1171,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Which sales territory region had the highest reseller gross margin in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Central: Reseller gross margin (USD) 14,849.1.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, ROUND(SUM(FactResellerSales.SalesAmount - FactResellerSales.TotalProductCost), 2) AS reseller_gross_margin FROM FactResellerSales JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY reseller_gross_margin DESC LIMIT 1",
+    "rows": [
+     [
+      "Central",
+      14849.1
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: reseller_gross_margin"
+    ],
+    "first_sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, reseller_gross_margin FROM FactResellerSales JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY reseller_gross_margin DESC LIMIT 1",
+    "input_tokens": 1565,
+    "output_tokens": 331,
+    "cost_usd": 0.00028469,
+    "latency_ms": 2236,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales last month",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "2014-01: Internet sales (USD) 45,694.7.",
+    "sql": "SELECT substr(FactInternetSales.OrderDate, 1, 7), ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales WHERE FactInternetSales.OrderDate BETWEEN '2014-01-01' AND '2014-01-28' GROUP BY substr(FactInternetSales.OrderDate, 1, 7) ORDER BY substr(FactInternetSales.OrderDate, 1, 7) DESC LIMIT 1",
+    "rows": [
+     [
+      "2014-01",
+      45694.72
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 627,
+    "output_tokens": 146,
+    "cost_usd": 0.00011861,
+    "latency_ms": 970,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were sales in Canada last month?",
+    "metric_choice": "internet_sales",
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Canada: Internet sales (USD) 9,457.6.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales INNER JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimSalesTerritory.SalesTerritoryRegion = 'Canada' AND FactInternetSales.OrderDate BETWEEN '2014-01-01' AND '2014-01-28' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY internet_sales DESC LIMIT 1",
+    "rows": [
+     [
+      "Canada",
+      9457.62
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 707,
+    "output_tokens": 168,
+    "cost_usd": 0.00013488999999999998,
+    "latency_ms": 1251,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller sales in North America by sales territory country in 2012",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Reseller sales in North America were 5478100 in Canada and 19621387 in the United States.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryCountry, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales INNER JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimSalesTerritory.SalesTerritoryGroup = 'North America' AND FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimSalesTerritory.SalesTerritoryCountry",
+    "rows": [
+     [
+      "Canada",
+      5478100.19
+     ],
+     [
+      "United States",
+      19621386.81
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 1139,
+    "output_tokens": 266,
+    "cost_usd": 0.00021573,
+    "latency_ms": 1918,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were sales in Canada last month?",
+    "metric_choice": null,
+    "status": "clarify",
+    "expected_status": "clarify",
+    "behaved": true,
+    "text": "This warehouse has two sales channels. Which sales do you mean?",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 0
+   },
+   {
+    "question": "How many orders did we get in 2013?",
+    "metric_choice": null,
+    "status": "clarify",
+    "expected_status": "clarify",
+    "behaved": true,
+    "text": "Internet orders or reseller orders?",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 0
+   },
+   {
+    "question": "Internet sales of Atlas Laptop in the North region in the last 10 days",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'Atlas Laptop' (nothing similar in this data), 'North' (closest: Northwest (sales territory region); Northeast (sales territory region); Nord (state or province (of the customer or reseller)); Shorts (product subcategory)). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 4
+   },
+   {
+    "question": "What is the weather in Paris?",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'weather' (nothing similar in this data), 'Paris' (closest: Seine (Paris) (state or province (of the customer or reseller))). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 2
+   },
+   {
+    "question": "Internet sales by reseller in 2013",
+    "metric_choice": null,
+    "status": "refused",
+    "expected_status": "refused",
+    "behaved": true,
+    "text": "DimReseller, FactResellerSales cannot be combined with Internet sales (USD): the only join goes back through a shared dimension to another fact table, which repeats rows and inflates the total. Ask it a different way, or ask the data owner for a governed metric that does this.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 0
+   },
+   {
+    "question": "Internet sales in 2013; DROP TABLE DimProduct",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'DROP TABLE DimProduct' (nothing similar in this data). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 7
+   }
+  ],
+  [
+   {
+    "question": "What were internet sales of Mountain-200 Black, 38 in the Northwest in the last 10 days?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "No internet sales (usd) matched for 2014-01-19 to 2014-01-28.",
+    "sql": "SELECT DimProduct.EnglishProductName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2014-01-19' AND '2014-01-28' GROUP BY DimProduct.EnglishProductName",
+    "rows": [],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.EnglishProductName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2014-01-19' AND '2014-01-28' GROUP BY DimProduct.EnglishProductName, internet_sales",
+    "input_tokens": 1761,
+    "output_tokens": 374,
+    "cost_usd": 0.00032087,
+    "latency_ms": 2515,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were internet sales of Mountain-200 Black, 38 in the Northwest in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200 Black, 38: Internet sales (USD) 142,289.4.",
+    "sql": "SELECT DimProduct.EnglishProductName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.EnglishProductName",
+    "rows": [
+     [
+      "Mountain-200 Black, 38",
+      142289.38
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.EnglishProductName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProduct.EnglishProductName = 'Mountain-200 Black, 38' AND DimSalesTerritory.SalesTerritoryRegion = 'Northwest' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.EnglishProductName, internet_sales",
+    "input_tokens": 1759,
+    "output_tokens": 361,
+    "cost_usd": 0.00031623,
+    "latency_ms": 3871,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were internet sales of Mountain-200 Black in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200: Internet sales (USD) 2,866,442.5.",
+    "sql": "SELECT DimProduct.ModelName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND DimProduct.Color = 'Black' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.ModelName",
+    "rows": [
+     [
+      "Mountain-200",
+      2866442.51
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimProduct.ModelName, internet_sales FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND DimProduct.Color = 'Black' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProduct.ModelName, internet_sales",
+    "input_tokens": 1594,
+    "output_tokens": 323,
+    "cost_usd": 0.00028516,
+    "latency_ms": 2217,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Which product category had the highest reseller sales in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Bikes: Reseller sales (USD) 26,942,691.1.",
+    "sql": "SELECT DimProductCategory.EnglishProductCategoryName, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales JOIN DimProduct ON FactResellerSales.ProductKey = DimProduct.ProductKey JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey JOIN DimProductCategory ON DimProductSubcategory.ProductCategoryKey = DimProductCategory.ProductCategoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimProductCategory.EnglishProductCategoryName ORDER BY reseller_sales DESC LIMIT 1",
+    "rows": [
+     [
+      "Bikes",
+      26942691.15
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 793,
+    "output_tokens": 198,
+    "cost_usd": 0.00015455000000000002,
+    "latency_ms": 2096,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales by sales territory group in Q3 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet sales were 1443547.14 in Europe, 1714102.05 in North America, and 1212587.87 in Pacific during Q3 2013.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryGroup, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactInternetSales.OrderDate BETWEEN '2013-07-01' AND '2013-09-30' GROUP BY DimSalesTerritory.SalesTerritoryGroup",
+    "rows": [
+     [
+      "Europe",
+      1443547.14
+     ],
+     [
+      "North America",
+      1714102.05
+     ],
+     [
+      "Pacific",
+      1212587.87
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: internet_sales"
+    ],
+    "first_sql": "SELECT DimSalesTerritory.SalesTerritoryGroup, internet_sales FROM FactInternetSales JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactInternetSales.OrderDate BETWEEN '2013-07-01' AND '2013-09-30' GROUP BY DimSalesTerritory.SalesTerritoryGroup",
+    "input_tokens": 1946,
+    "output_tokens": 428,
+    "cost_usd": 0.00035957999999999997,
+    "latency_ms": 3628,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "How many online orders included helmets in France and Germany in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet orders 1,287.",
+    "sql": "SELECT COUNT(DISTINCT FactInternetSales.SalesOrderNumber) AS internet_orders FROM FactInternetSales JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimProductSubcategory.EnglishProductSubcategoryName = 'Helmets' AND DimSalesTerritory.SalesTerritoryRegion IN ('France', 'Germany') AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31'",
+    "rows": [
+     [
+      1287
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 835,
+    "output_tokens": 199,
+    "cost_usd": 0.00015951,
+    "latency_ms": 1307,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What was the internet gross margin of Road Bikes in 2012?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Road Bikes: Internet gross margin (USD) 1,376,745.4.",
+    "sql": "SELECT DimProductSubcategory.EnglishProductSubcategoryName, ROUND(SUM(FactInternetSales.SalesAmount - FactInternetSales.TotalProductCost), 2) AS internet_gross_margin FROM FactInternetSales INNER JOIN DimProduct ON FactInternetSales.ProductKey = DimProduct.ProductKey INNER JOIN DimProductSubcategory ON DimProduct.ProductSubcategoryKey = DimProductSubcategory.ProductSubcategoryKey WHERE DimProductSubcategory.EnglishProductSubcategoryName = 'Road Bikes' AND FactInternetSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimProductSubcategory.EnglishProductSubcategoryName",
+    "rows": [
+     [
+      "Road Bikes",
+      1376745.45
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 769,
+    "output_tokens": 201,
+    "cost_usd": 0.00015293000000000001,
+    "latency_ms": 1372,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Top 5 products by internet sales in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Top 5 products by internet sales in 2013 are Mountain-200 Black, 42 with 970780.77, Mountain-200 Silver, 38 with 967435.83, Mountain-200 Black, 46 with 947830.87, Mountain-200 Black, 38 with 947830.87, and Mountain-200 Silver, 46 with 923356.02.",
+    "sql": "SELECT T1.EnglishProductName, ROUND(SUM(T2.SalesAmount), 2) AS internet_sales FROM DimProduct AS T1 INNER JOIN FactInternetSales AS T2 ON T1.ProductKey = T2.ProductKey WHERE T2.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY T1.EnglishProductName ORDER BY internet_sales DESC LIMIT 5",
+    "rows": [
+     [
+      "Mountain-200 Black, 42",
+      970780.77
+     ],
+     [
+      "Mountain-200 Silver, 38",
+      967435.83
+     ],
+     [
+      "Mountain-200 Black, 46",
+      947830.87
+     ],
+     [
+      "Mountain-200 Black, 38",
+      947830.87
+     ],
+     [
+      "Mountain-200 Silver, 46",
+      923356.02
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: T2.internet_sales"
+    ],
+    "first_sql": "SELECT T1.EnglishProductName, T2.internet_sales FROM DimProduct AS T1 INNER JOIN FactInternetSales AS T2 ON T1.ProductKey = T2.ProductKey WHERE T2.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY T1.EnglishProductName ORDER BY T2.internet_sales DESC LIMIT 5",
+    "input_tokens": 2038,
+    "output_tokens": 588,
+    "cost_usd": 0.00042410000000000006,
+    "latency_ms": 3905,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller sales by business type in 2012",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Warehouse sales were 13190641, Value Added Reseller sales were 12996239, and Specialty Bike Shop sales were 2006751 in 2012.",
+    "sql": "SELECT DimReseller.BusinessType, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales JOIN DimReseller ON FactResellerSales.ResellerKey = DimReseller.ResellerKey WHERE FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimReseller.BusinessType ORDER BY reseller_sales DESC",
+    "rows": [
+     [
+      "Warehouse",
+      13190641.03
+     ],
+     [
+      "Value Added Reseller",
+      12996239.12
+     ],
+     [
+      "Specialty Bike Shop",
+      2006751.39
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: reseller_sales"
+    ],
+    "first_sql": "SELECT DimReseller.BusinessType, reseller_sales FROM FactResellerSales JOIN DimReseller ON FactResellerSales.ResellerKey = DimReseller.ResellerKey WHERE FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimReseller.BusinessType ORDER BY reseller_sales DESC",
+    "input_tokens": 1947,
+    "output_tokens": 411,
+    "cost_usd": 0.00035391,
+    "latency_ms": 2755,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales by month in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Internet sales in 2013 ranged from 771348.74 to 1874360.29.",
+    "sql": "SELECT substr(FactInternetSales.OrderDate, 1, 7), ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales WHERE FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY substr(FactInternetSales.OrderDate, 1, 7) ORDER BY substr(FactInternetSales.OrderDate, 1, 7)",
+    "rows": [
+     [
+      "2013-01",
+      857689.91
+     ],
+     [
+      "2013-02",
+      771348.74
+     ],
+     [
+      "2013-03",
+      1049907.39
+     ],
+     [
+      "2013-04",
+      1046022.77
+     ],
+     [
+      "2013-05",
+      1284592.93
+     ],
+     [
+      "2013-06",
+      1643177.78
+     ],
+     [
+      "2013-07",
+      1371675.81
+     ],
+     [
+      "2013-08",
+      1551065.56
+     ],
+     [
+      "2013-09",
+      1447495.69
+     ],
+     [
+      "2013-10",
+      1673293.41
+     ],
+     [
+      "2013-11",
+      1780920.06
+     ],
+     [
+      "2013-12",
+      1874360.29
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 1456,
+    "output_tokens": 536,
+    "cost_usd": 0.00034240000000000003,
+    "latency_ms": 4047,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller units of Mountain-200 last quarter",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Mountain-200: Reseller units sold 976.",
+    "sql": "SELECT DimProduct.ModelName, SUM(FactResellerSales.OrderQuantity) AS reseller_units FROM FactResellerSales INNER JOIN DimProduct ON FactResellerSales.ProductKey = DimProduct.ProductKey WHERE DimProduct.ModelName = 'Mountain-200' AND FactResellerSales.OrderDate BETWEEN '2013-10-01' AND '2013-11-29' GROUP BY DimProduct.ModelName",
+    "rows": [
+     [
+      "Mountain-200",
+      976
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 680,
+    "output_tokens": 166,
+    "cost_usd": 0.00013124,
+    "latency_ms": 1755,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales in California in 2013",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "California: Internet sales (USD) 3,355,851.4.",
+    "sql": "SELECT DimGeography.StateProvinceName, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales INNER JOIN DimCustomer ON FactInternetSales.CustomerKey = DimCustomer.CustomerKey INNER JOIN DimGeography ON DimCustomer.GeographyKey = DimGeography.GeographyKey WHERE DimGeography.StateProvinceName = 'California' AND FactInternetSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimGeography.StateProvinceName",
+    "rows": [
+     [
+      "California",
+      3355851.39
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 768,
+    "output_tokens": 166,
+    "cost_usd": 0.00014092000000000003,
+    "latency_ms": 1134,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Which sales territory region had the highest reseller gross margin in 2013?",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Central: Reseller gross margin (USD) 14,849.1.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, ROUND(SUM(FactResellerSales.SalesAmount - FactResellerSales.TotalProductCost), 2) AS reseller_gross_margin FROM FactResellerSales JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY reseller_gross_margin DESC LIMIT 1",
+    "rows": [
+     [
+      "Central",
+      14849.1
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": true,
+    "repair_reasons": [
+     "sqlite: no such column: reseller_gross_margin"
+    ],
+    "first_sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, reseller_gross_margin FROM FactResellerSales JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE FactResellerSales.OrderDate BETWEEN '2013-01-01' AND '2013-12-31' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY reseller_gross_margin DESC LIMIT 1",
+    "input_tokens": 1565,
+    "output_tokens": 331,
+    "cost_usd": 0.00028469,
+    "latency_ms": 2309,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Internet sales last month",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "2014-01: Internet sales (USD) 45,694.7.",
+    "sql": "SELECT substr(FactInternetSales.OrderDate, 1, 7), ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales WHERE FactInternetSales.OrderDate BETWEEN '2014-01-01' AND '2014-01-28' GROUP BY substr(FactInternetSales.OrderDate, 1, 7) ORDER BY substr(FactInternetSales.OrderDate, 1, 7) DESC LIMIT 1",
+    "rows": [
+     [
+      "2014-01",
+      45694.72
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 627,
+    "output_tokens": 146,
+    "cost_usd": 0.00011861,
+    "latency_ms": 1042,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were sales in Canada last month?",
+    "metric_choice": "internet_sales",
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Canada: Internet sales (USD) 9,457.6.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryRegion, ROUND(SUM(FactInternetSales.SalesAmount), 2) AS internet_sales FROM FactInternetSales INNER JOIN DimSalesTerritory ON FactInternetSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimSalesTerritory.SalesTerritoryRegion = 'Canada' AND FactInternetSales.OrderDate BETWEEN '2014-01-01' AND '2014-01-28' GROUP BY DimSalesTerritory.SalesTerritoryRegion ORDER BY internet_sales DESC LIMIT 1",
+    "rows": [
+     [
+      "Canada",
+      9457.62
+     ]
+    ],
+    "answer_mode": "template",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 707,
+    "output_tokens": 168,
+    "cost_usd": 0.00013488999999999998,
+    "latency_ms": 1140,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "Reseller sales in North America by sales territory country in 2012",
+    "metric_choice": null,
+    "status": "answered",
+    "expected_status": "answered",
+    "behaved": true,
+    "text": "Reseller sales in North America were 5478100 in Canada and 19621387 in the United States.",
+    "sql": "SELECT DimSalesTerritory.SalesTerritoryCountry, ROUND(SUM(FactResellerSales.SalesAmount), 2) AS reseller_sales FROM FactResellerSales INNER JOIN DimSalesTerritory ON FactResellerSales.SalesTerritoryKey = DimSalesTerritory.SalesTerritoryKey WHERE DimSalesTerritory.SalesTerritoryGroup = 'North America' AND FactResellerSales.OrderDate BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY DimSalesTerritory.SalesTerritoryCountry",
+    "rows": [
+     [
+      "Canada",
+      5478100.19
+     ],
+     [
+      "United States",
+      19621386.81
+     ]
+    ],
+    "answer_mode": "model",
+    "check_ok": true,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 1139,
+    "output_tokens": 266,
+    "cost_usd": 0.00021573,
+    "latency_ms": 1785,
+    "understood": true,
+    "understood_why": [],
+    "correct": true
+   },
+   {
+    "question": "What were sales in Canada last month?",
+    "metric_choice": null,
+    "status": "clarify",
+    "expected_status": "clarify",
+    "behaved": true,
+    "text": "This warehouse has two sales channels. Which sales do you mean?",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 0
+   },
+   {
+    "question": "How many orders did we get in 2013?",
+    "metric_choice": null,
+    "status": "clarify",
+    "expected_status": "clarify",
+    "behaved": true,
+    "text": "Internet orders or reseller orders?",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 0
+   },
+   {
+    "question": "Internet sales of Atlas Laptop in the North region in the last 10 days",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'Atlas Laptop' (nothing similar in this data), 'North' (closest: Northwest (sales territory region); Northeast (sales territory region); Nord (state or province (of the customer or reseller)); Shorts (product subcategory)). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 4
+   },
+   {
+    "question": "What is the weather in Paris?",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'weather' (nothing similar in this data), 'Paris' (closest: Seine (Paris) (state or province (of the customer or reseller))). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 2
+   },
+   {
+    "question": "Internet sales by reseller in 2013",
+    "metric_choice": null,
+    "status": "refused",
+    "expected_status": "refused",
+    "behaved": true,
+    "text": "DimReseller, FactResellerSales cannot be combined with Internet sales (USD): the only join goes back through a shared dimension to another fact table, which repeats rows and inflates the total. Ask it a different way, or ask the data owner for a governed metric that does this.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 0
+   },
+   {
+    "question": "Internet sales in 2013; DROP TABLE DimProduct",
+    "metric_choice": null,
+    "status": "not_understood",
+    "expected_status": "not_understood",
+    "behaved": true,
+    "text": "I could not match 'DROP TABLE DimProduct' (nothing similar in this data). I will not guess, because a word I ignore would be a filter I drop.",
+    "sql": null,
+    "rows": [],
+    "answer_mode": "none",
+    "check_ok": null,
+    "sql_repaired": false,
+    "repair_reasons": [],
+    "first_sql": null,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cost_usd": 0.0,
+    "latency_ms": 7
+   }
+  ]
+ ]
+}
