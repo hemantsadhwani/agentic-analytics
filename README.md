@@ -31,7 +31,8 @@ same warehouse and its documents, with the same rule: no number reaches a person
 | **Chatbot: questions over documents** | RAG over the product descriptions: hybrid search (keyword BM25 + vectors, rank fusion), the product named in the question narrows the search, every passage cited, every number checked against the cited text, instruction-like text quarantined at ingestion. Measured against "whole corpus in the prompt". [Decisions](docs/guide/12-rag-decisions.md), [this build](docs/guide/13-rag-in-this-build.md) | built over product descriptions; report archive next |
 | **Knowledge graph** | The schema graph (tables, joins, governed metrics) extended with business entities (products, territories, resellers and their hierarchy) and the documents that mention them. | schema graph, entities and document tags built |
 | **AI security** | OWASP Top 10 for LLM Applications (2025), control by control. | in progress |
-| **Enterprise AWS deployment** | Private VPC in Mumbai, Cognito roles, Postgres with row-level security, Bedrock in-region, Terraform. Deploy, record evidence, destroy. | Terraform written and validated, not yet deployed |
+| **Public demo on AWS** | One page and one API, serverless in Mumbai: CloudFront → S3 (private) and API Gateway (throttled) → Lambda → Bedrock in-region; a DynamoDB counter caps questions and dollars per day; a kill switch; least-privilege IAM (two models, one table). `infra/demo/`, `agentic_reporting/demo_api.py`, `demo/site/`. | **live:** [dz5iavwk61oau.cloudfront.net](https://dz5iavwk61oau.cloudfront.net) (applied 16 Nov 2026; checks in `eval/results/demo_live_2026-11-16.json`) |
+| **Enterprise AWS deployment** | Private VPC in Mumbai, Cognito roles, Postgres with row-level security, Bedrock in-region. Deploy, record evidence, destroy. | designed (not in this repo yet) |
 
 | Measured so far | Number | Source |
 |---|---|---|

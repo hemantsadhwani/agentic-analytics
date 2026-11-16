@@ -1,0 +1,25 @@
+{
+ "what": "The public demo after `terraform apply` (infra/demo, 23 resources, ap-south-1), checked through the public CloudFront URL with curl and headless Chrome.",
+ "date": "2026-11-16",
+ "url": "https://dz5iavwk61oau.cloudfront.net",
+ "model": "bedrock-converse/google.gemma-3-12b-it, embeddings amazon.titan-embed-text-v2:0",
+ "lambda_zip_mb": 9.5,
+ "apply_seconds_cloudfront": 159,
+ "checks": [
+  {"check": "page, report, css, js over HTTPS", "result": "200 for all four"},
+  {"check": "GET /api/health through CloudFront (cold start)", "result": "200 in 3.4 s"},
+  {"check": "API Gateway called directly, without CloudFront's secret header", "result": "403 forbidden"},
+  {"check": "security headers", "result": "HSTS, X-Frame-Options SAMEORIGIN, nosniff, strict-origin-when-cross-origin"},
+  {"check": "budget counter", "result": "DynamoDB counted 8 questions, $0.000719, after the questions below"}
+ ],
+ "questions": [
+  {"q": "What were internet sales of Mountain-200 Black, 38 in the Northwest in 2013?", "status": "answered", "route": "sql", "text": "Mountain-200 Black, 38: Internet sales (USD) 142,289.4.", "cost_usd": 0.00031623, "seconds": 2.75},
+  {"q": "Which product category had the highest reseller sales in 2013?", "status": "answered", "route": "sql", "text": "Bikes: Reseller sales (USD) 26,942,691.1.", "cost_usd": 0.00015455, "seconds": 1.49},
+  {"q": "What were sales in Canada last month?", "status": "clarify", "route": "none", "cost_usd": 0.0, "seconds": 0.13, "note": "no model call"},
+  {"q": "(same, metric=reseller_sales)", "status": "answered", "route": "sql", "text": "Canada: Reseller sales (USD) 585,197.1.", "note": "'last month' read as 2013-11-01 to 2013-11-29"},
+  {"q": "Which road frame is the lightest?", "status": "answered", "route": "documents", "cited": "Product model HL Road Frame (Road Frames, Components)", "cost_usd": 0.0000743, "seconds": 0.72},
+  {"q": "What is the battery life of the Mountain-200?", "status": "not_understood", "route": "documents", "text": "I could not find this in the data or the documents.", "cost_usd": 0.0000372, "seconds": 0.45},
+  {"q": "Internet sales by reseller in 2013", "status": "refused", "note": "fan trap: the join would double-count; no model call", "seconds": 0.09},
+  {"q": "Internet sales in 2013; DROP TABLE DimProduct", "status": "not_understood", "note": "unexplained words stop the run before any model call", "seconds": 0.09}
+ ]
+}

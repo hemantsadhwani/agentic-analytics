@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>agentic-analytics: live demo</title>
+<meta name="description" content="Ask a data warehouse a question. Every number in the answer is traced to a read-only query; documents are cited; the bot asks back when unsure.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="#">agentic-analytics</a>
+    <nav>
+      <a href="#ask">Ask</a><a href="#report">Report</a><a href="#how">How it works</a><a href="#evidence">Evidence</a>
+      <a href="https://github.com/hemantsadhwani/agentic-analytics" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero wrap">
+  <p class="eyebrow">Live demo, not a product · Amazon Bedrock in Mumbai · public sample data</p>
+  <h1>Ask a data warehouse. Every number is checked before you see it.</h1>
+  <p class="lede">An analytics assistant over Microsoft's AdventureWorks sample warehouse. Code works out what
+    you mean, writes one read-only query, and checks every number the model writes against the rows. When a word
+    could mean two things, it asks. When it cannot answer safely, it says so.</p>
+  <p class="cta"><a class="btn primary" href="#ask">Ask a question</a><a class="btn" href="#report">See the monthly report</a></p>
+</section>
+
+<section id="ask" class="wrap">
+  <h2>Ask</h2>
+  <form id="ask-form" class="ask" autocomplete="off">
+    <label for="q" class="sr">Your question</label>
+    <input id="q" name="q" type="text" maxlength="300" placeholder="e.g. Which product category had the highest reseller sales in 2013?" required>
+    <button type="submit" class="btn primary" id="ask-btn">Ask</button>
+  </form>
+  <p class="hint" id="budget">Data runs from Dec 2010 to Jan 2014, so "last month" means the latest month in the data.</p>
+
+  <div class="chips" id="chips">
+    <div class="group"><span class="glabel">Numbers</span>
+      <button type="button" data-q="What were internet sales of Mountain-200 Black, 38 in the Northwest in 2013?">Mountain-200 in the Northwest, 2013</button>
+      <button type="button" data-q="Which product category had the highest reseller sales in 2013?">Top category for resellers</button>
+      <button type="button" data-q="Internet sales by month in 2013">Internet sales by month</button>
+      <button type="button" data-q="Top 5 products by internet sales in 2013">Top 5 products</button>
+    </div>
+    <div class="group"><span class="glabel">Asks back</span>
+      <button type="button" data-q="What were sales in Canada last month?">Sales in Canada last month</button>
+    </div>
+    <div class="group"><span class="glabel">Products (documents)</span>
+      <button type="button" data-q="Which road frame is the lightest?">Lightest road frame</button>
+      <button type="button" data-q="How many keys come with the Cable Lock?">Keys with the Cable Lock</button>
+      <button type="button" data-q="What is the battery life of the Mountain-200?">Mountain-200 battery life</button>
+    </div>
+    <div class="group"><span class="glabel">Refuses</span>
+      <button type="button" data-q="Internet sales by reseller in 2013">Internet sales by reseller</button>
+      <button type="button" data-q="Internet sales of Atlas Laptop in the North region in the last 10 days">An unknown product</button>
+      <button type="button" data-q="Internet sales in 2013; DROP TABLE DimProduct">An injection attempt</button>
+    </div>
+  </div>
+
+  <div id="answer" class="answer" hidden aria-live="polite"></div>
+  <p class="fine">Questions are logged for 14 days, without your IP address, to improve the demo. Please do not type personal data.</p>
+</section>
+
+<section id="report" class="wrap">
+  <h2>The monthly report</h2>
+  <div class="split">
+    <div>
+      <p>The same rule, on a schedule. A monthly review a manager can read in two minutes: headline numbers, what
+        needs a decision, then the charts behind it.</p>
+      <ul class="ticks">
+        <li>Code draws every tile, bar and axis from the query rows.</li>
+        <li>"Needs a decision" rules are SQL in the report spec, reviewed like code.</li>
+        <li>The model writes the prose; every number in it is checked; a person approves before it is published.</li>
+      </ul>
+      <p><a class="btn" href="report.html" target="_blank" rel="noopener">Open the November 2013 review</a></p>
+    </div>
+    <div class="frame"><iframe src="report.html" title="November 2013 monthly review" loading="lazy"></iframe></div>
+  </div>
+</section>
+
+<section id="how" class="wrap">
+  <h2>How it works</h2>
+  <ol class="steps">
+    <li><b>Understand in code.</b> Product and place names are matched to exact values in the warehouse. Time words become exact dates, anchored on the data.</li>
+    <li><b>Ask when unsure.</b> "Sales" has two meanings here (online and resellers), so the bot asks. Unknown words stop the run before any model call.</li>
+    <li><b>One read-only query.</b> A schema graph links only the tables needed. The model writes one SELECT, which can read nothing else. Joins that would double-count are refused.</li>
+    <li><b>Check, then answer.</b> The filters must be in the SQL. Every number in the answer must match a cell the query returned. Product questions are answered from cited descriptions.</li>
+    <li><b>Show the work.</b> Each answer shows its SQL, its assumptions, the sources and the cost.</li>
+  </ol>
+</section>
+
+<section id="evidence" class="wrap">
+  <h2>Measured, not claimed</h2>
+  <div class="scroll">
+  <table class="evidence">
+    <thead><tr><th>What</th><th>Result</th><th>Source in the repo</th></tr></thead>
+    <tbody>
+      <tr><td>Chatbot golden questions, Gemma 3 12B × 3 runs</td><td>66/66 right behaviour; SQL results 48/48 correct; about $0.00024 per answer</td><td><code>eval/results/chat_bench_gemma-3-12b_2026-11-15.json</code></td></tr>
+      <tr><td>SQL with its filter removed (negative control)</td><td>refused 16/16, every CI run</td><td><code>eval/chat_eval.py</code></td></tr>
+      <tr><td>Documents: retrieval vs the whole corpus in the prompt</td><td>19/19 vs 18/19; $0.000059 vs $0.000668 per question</td><td><code>eval/results/rag_bench_gemma-3-12b_titan_2026-11-16.json</code></td></tr>
+      <tr><td>Planted "ignore your instructions" document</td><td>quarantined at ingestion in every run</td><td><code>eval/rag_eval.py</code></td></tr>
+      <tr><td>Monthly review: wrong rankings the number check cannot see</td><td>6 when the model ranked; 0 once SQL labels the ranks</td><td><code>eval/results/aw_monthly_review_2026-11-16.json</code></td></tr>
+      <tr><td>Golden reports, model chosen by cost per passing report</td><td>Gemma 3 12B 6/6 at $0.0006 per report</td><td><code>eval/results/model_bench_2026-11-16.json</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+</main>
+
+<footer class="wrap foot">
+  <p>Data: Microsoft AdventureWorks DW sample (MIT licence), no customer personal data. Models: Gemma 3 12B and
+    Titan Text Embeddings V2 on Amazon Bedrock, ap-south-1. A daily budget caps the demo; when it is used up, it
+    pauses until midnight UTC.</p>
+  <p>Built by Hemant Sadhwani · <a href="https://github.com/hemantsadhwani/agentic-analytics" rel="noopener">source and evidence on GitHub</a></p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

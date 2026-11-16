@@ -11,3 +11,9 @@ reports/
 .agentic_reporting/
 samples/*.sqlite
 samples/.cache/
+
+# demo infra
+infra/demo/build/
+infra/demo/.terraform/
+infra/demo/*.tfstate*
+infra/demo/.terraform.lock.hcl.bak

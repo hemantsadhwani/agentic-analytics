@@ -28,6 +28,10 @@ eval/                  report_eval.py + schema_linking_eval.py + chat_eval.py + 
                        (NOT a CI gate; results committed in eval/results/)
 tests/                 pytest, offline only (fake providers, socket-patched private mode)
 deploy/k8s/            CronJob (runs to the gate) + approver pod + PVC, kustomize
+demo/site/ + infra/demo/   the PUBLIC demo: static page + Terraform (CloudFront, S3, API Gateway, Lambda =
+                       agentic_reporting/demo_api.py, DynamoDB daily budget). Build: python infra/demo/build_lambda.py;
+                       local: python -m agentic_reporting.demo_api --serve. Kill switch: -var demo_enabled=false.
+                       Live since 16 Nov 2026 at https://dz5iavwk61oau.cloudfront.net (profile agentic, ap-south-1)
 docs/                  architecture.md, adr/0001-0006 (0005 = schema graph: the graph holds the map, the warehouse holds the rows;
                        0006 = the chatbot: understand in code, ask when unsure, show the work); data/ = AdventureWorks
 ```
