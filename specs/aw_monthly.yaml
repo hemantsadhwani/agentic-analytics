@@ -1,0 +1,249 @@
+# Monthly business review over AdventureWorks DW (Microsoft sample data, MIT; no customer PII).
+# Built to be read in two minutes: headline numbers first, then what needs a decision, then
+# the charts that explain it. Every number on the page comes from one of these queries:
+# the tiles and charts are drawn by code from the rows, and the model's prose is checked.
+#
+# The report month is the latest month BOTH channels have data for (internet sales run on
+# to Jan 2014, reseller sales stop in Nov 2013), so the two are always compared fairly.
+# The "needs a decision" rules are SQL, reviewed like code: a rule changes here, never in a
+# prompt. Each rule's limit is also a number column (threshold), so prose that quotes the
+# rule ("fell more than 10%") is traced to a query value like every other number. It is
+# signed: the limit on the change (-10 means a fall of more than 10%).
+title: Monthly business review (AdventureWorks)
+description: Headline numbers, what needs a decision, and the trend, territories, categories and models behind them.
+db: samples/adventureworks.sqlite
+sections:
+  - id: headline
+    heading: Headline
+    kind: kpis
+    sql: |
+      WITH p AS (
+        SELECT MIN(m) AS m FROM (
+          SELECT MAX(substr(OrderDate, 1, 7)) AS m FROM FactInternetSales
+          UNION ALL SELECT MAX(substr(OrderDate, 1, 7)) FROM FactResellerSales)),
+      per AS (SELECT m, substr(date(m || '-01', '-1 month'), 1, 7) AS prev_m,
+                     substr(date(m || '-01', '-1 year'), 1, 7) AS year_m FROM p),
+      s AS (
+        SELECT substr(OrderDate, 1, 7) AS m, 'Internet' AS channel, SalesAmount,
+               TotalProductCost, SalesOrderNumber FROM FactInternetSales
+        UNION ALL
+        SELECT substr(OrderDate, 1, 7), 'Reseller', SalesAmount, TotalProductCost,
+               SalesOrderNumber FROM FactResellerSales),
+      agg AS (
+        SELECT m, ROUND(SUM(SalesAmount), 2) AS sales,
+               ROUND(100.0 * SUM(SalesAmount - TotalProductCost) / SUM(SalesAmount), 1) AS margin_pct,
+               COUNT(DISTINCT SalesOrderNumber) AS orders,
+               ROUND(100.0 * SUM(CASE WHEN channel = 'Internet' THEN SalesAmount ELSE 0 END)
+                     / SUM(SalesAmount), 1) AS internet_share_pct
+        FROM s GROUP BY m)
+      SELECT per.m AS month, c.sales AS sales,
+             ROUND(100.0 * (c.sales - pr.sales) / pr.sales, 1) AS sales_vs_prior_pct,
+             ROUND(100.0 * (c.sales - y.sales) / y.sales, 1) AS sales_vs_year_pct,
+             c.margin_pct AS margin_pct,
+             ROUND(c.margin_pct - pr.margin_pct, 1) AS margin_vs_prior_pts,
+             ROUND(c.margin_pct - y.margin_pct, 1) AS margin_vs_year_pts,
+             c.orders AS orders,
+             ROUND(100.0 * (c.orders - pr.orders) / pr.orders, 1) AS orders_vs_prior_pct,
+             ROUND(100.0 * (c.orders - y.orders) / y.orders, 1) AS orders_vs_year_pct,
+             c.internet_share_pct AS internet_share_pct,
+             ROUND(c.internet_share_pct - pr.internet_share_pct, 1) AS internet_share_vs_prior_pts,
+             ROUND(c.internet_share_pct - y.internet_share_pct, 1) AS internet_share_vs_year_pts
+      FROM per JOIN agg AS c ON c.m = per.m JOIN agg AS pr ON pr.m = per.prev_m
+      JOIN agg AS y ON y.m = per.year_m
+    tiles:
+      - {label: Sales, value: sales, format: usd, vs_prior: sales_vs_prior_pct, vs_year: sales_vs_year_pct}
+      - {label: Gross margin, value: margin_pct, format: pct, vs_prior: margin_vs_prior_pts, vs_year: margin_vs_year_pts, change_format: pts}
+      - {label: Orders, value: orders, format: count, vs_prior: orders_vs_prior_pct, vs_year: orders_vs_year_pct}
+      - {label: Internet share of sales, value: internet_share_pct, format: pct, vs_prior: internet_share_vs_prior_pts, vs_year: internet_share_vs_year_pts, change_format: pts}
+    prompt: >-
+      Write a two sentence executive summary of the month: total sales and its change on the
+      prior month and on the same month a year ago, then the gross margin percent. Plain
+      words, no recommendations.
+      Write money rounded to one decimal: in millions from $1 million up (for example $5.2 million), in thousands below (for example $538.0 thousand, never $0.5 million). Say "this month" rather than the month's code.
+    max_words: 70
+
+  - id: decisions
+    heading: Needs a decision
+    kind: decisions
+    sql: |
+      WITH p AS (
+        SELECT MIN(m) AS m FROM (
+          SELECT MAX(substr(OrderDate, 1, 7)) AS m FROM FactInternetSales
+          UNION ALL SELECT MAX(substr(OrderDate, 1, 7)) FROM FactResellerSales)),
+      per AS (SELECT m, substr(date(m || '-01', '-1 month'), 1, 7) AS prev_m FROM p),
+      s AS (
+        SELECT substr(OrderDate, 1, 7) AS m, 'Internet' AS channel, SalesAmount,
+               TotalProductCost, ProductKey, SalesTerritoryKey FROM FactInternetSales
+        UNION ALL
+        SELECT substr(OrderDate, 1, 7), 'Reseller', SalesAmount, TotalProductCost,
+               ProductKey, SalesTerritoryKey FROM FactResellerSales),
+      cat AS (
+        SELECT s.m AS m, s.channel AS channel, pc.EnglishProductCategoryName AS category,
+               SUM(s.SalesAmount) AS sales, SUM(s.SalesAmount - s.TotalProductCost) AS margin
+        FROM s JOIN DimProduct AS dp ON dp.ProductKey = s.ProductKey
+        JOIN DimProductSubcategory AS ps ON ps.ProductSubcategoryKey = dp.ProductSubcategoryKey
+        JOIN DimProductCategory AS pc ON pc.ProductCategoryKey = ps.ProductCategoryKey
+        GROUP BY s.m, s.channel, pc.EnglishProductCategoryName),
+      ter AS (
+        SELECT s.m AS m, t.SalesTerritoryRegion AS region, SUM(s.SalesAmount) AS sales
+        FROM s JOIN DimSalesTerritory AS t ON t.SalesTerritoryKey = s.SalesTerritoryKey
+        GROUP BY s.m, t.SalesTerritoryRegion),
+      flags AS (
+        SELECT 'critical' AS severity, c.channel || ' channel, ' || c.category AS area,
+               'Sold below cost: gross margin is negative' AS issue,
+               ROUND(c.sales, 2) AS sales, ROUND(100.0 * c.margin / c.sales, 1) AS margin_pct,
+               NULL AS change_pct, 0 AS threshold
+        FROM per JOIN cat AS c ON c.m = per.m WHERE c.margin < 0
+        UNION ALL
+        SELECT 'warning', c.channel || ' channel, ' || c.category,
+               'Gross margin fell more than 3 points on last month',
+               ROUND(c.sales, 2), ROUND(100.0 * c.margin / c.sales, 1),
+               ROUND(100.0 * c.margin / c.sales - 100.0 * pv.margin / pv.sales, 1), -3
+        FROM per JOIN cat AS c ON c.m = per.m
+        JOIN cat AS pv ON pv.m = per.prev_m AND pv.channel = c.channel AND pv.category = c.category
+        WHERE c.margin >= 0 AND 100.0 * c.margin / c.sales < 100.0 * pv.margin / pv.sales - 3
+        UNION ALL
+        SELECT 'warning', t.region || ' territory', 'Sales fell more than 10% on last month',
+               ROUND(t.sales, 2), NULL, ROUND(100.0 * (t.sales - pv.sales) / pv.sales, 1), -10
+        FROM per JOIN ter AS t ON t.m = per.m
+        JOIN ter AS pv ON pv.m = per.prev_m AND pv.region = t.region
+        WHERE t.sales < 0.9 * pv.sales)
+      SELECT severity, area, issue, sales, margin_pct, change_pct, threshold FROM flags
+      ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END, sales DESC
+    prompt: >-
+      Each row is an item a rule flagged this month; the page already lists every item with
+      its numbers above your text, so do not restate them. Write two sentences only. First:
+      which item is most serious and why, naming its area and its issue as written in the
+      row, with at most two of its numbers (a sales amount is what was sold, not a loss).
+      Second: one question its owner should answer (for example about pricing, discounts or
+      costs). Do not invent causes. If there are no rows, say that no rule flagged anything
+      this month. Write money rounded to one decimal: in millions from $1 million up (for example $5.2 million), in thousands below (for example $538.0 thousand, never $0.5 million). Say "this month" rather than the month's code.
+    max_words: 70
+
+  - id: trend
+    heading: Thirteen-month trend by channel
+    sql: |
+      WITH p AS (
+        SELECT MIN(m) AS m FROM (
+          SELECT MAX(substr(OrderDate, 1, 7)) AS m FROM FactInternetSales
+          UNION ALL SELECT MAX(substr(OrderDate, 1, 7)) FROM FactResellerSales)),
+      per AS (SELECT m, substr(date(m || '-01', '-1 year'), 1, 7) AS year_m FROM p),
+      s AS (
+        SELECT substr(OrderDate, 1, 7) AS m, 'Internet' AS channel, SalesAmount FROM FactInternetSales
+        UNION ALL SELECT substr(OrderDate, 1, 7), 'Reseller', SalesAmount FROM FactResellerSales),
+      base AS (
+        SELECT s.m AS month,
+               ROUND(SUM(CASE WHEN s.channel = 'Internet' THEN s.SalesAmount ELSE 0 END), 2) AS internet_sales,
+               ROUND(SUM(CASE WHEN s.channel = 'Reseller' THEN s.SalesAmount ELSE 0 END), 2) AS reseller_sales
+        FROM s JOIN per ON s.m BETWEEN per.year_m AND per.m
+        GROUP BY s.m)
+      SELECT month, internet_sales, reseller_sales,
+             CASE WHEN RANK() OVER (ORDER BY internet_sales DESC) = 1 THEN 'highest internet month'
+                  WHEN RANK() OVER (ORDER BY internet_sales ASC) = 1 THEN 'lowest internet month'
+                  ELSE '' END AS internet_note,
+             CASE WHEN RANK() OVER (ORDER BY reseller_sales DESC) = 1 THEN 'highest reseller month'
+                  WHEN RANK() OVER (ORDER BY reseller_sales ASC) = 1 THEN 'lowest reseller month'
+                  ELSE '' END AS reseller_note
+      FROM base ORDER BY month
+    chart: {type: line, x: month, y: [internet_sales, reseller_sales], labels: {internet_sales: Internet, reseller_sales: Reseller}, format: usd}
+    prompt: >-
+      Describe the thirteen-month trend for each channel: where each started and ended, and
+      its highest month, which is the row whose note says so. Do not rank or compare months
+      yourself; use only the notes.
+      Write money rounded to one decimal: in millions from $1 million up (for example $5.2 million), in thousands below (for example $538.0 thousand, never $0.5 million). Name each month as its row writes it (for example 2013-01).
+    max_words: 90
+
+  - id: territories
+    heading: Territories against the same month last year
+    sql: |
+      WITH p AS (
+        SELECT MIN(m) AS m FROM (
+          SELECT MAX(substr(OrderDate, 1, 7)) AS m FROM FactInternetSales
+          UNION ALL SELECT MAX(substr(OrderDate, 1, 7)) FROM FactResellerSales)),
+      per AS (SELECT m, substr(date(m || '-01', '-1 year'), 1, 7) AS year_m FROM p),
+      s AS (
+        SELECT substr(OrderDate, 1, 7) AS m, SalesAmount, SalesTerritoryKey FROM FactInternetSales
+        UNION ALL SELECT substr(OrderDate, 1, 7), SalesAmount, SalesTerritoryKey FROM FactResellerSales),
+      base AS (
+      SELECT t.SalesTerritoryRegion AS territory,
+             ROUND(SUM(CASE WHEN s.m = per.m THEN s.SalesAmount ELSE 0 END), 2) AS sales,
+             ROUND(SUM(CASE WHEN s.m = per.year_m THEN s.SalesAmount ELSE 0 END), 2) AS sales_year_ago,
+             ROUND(100.0 * (SUM(CASE WHEN s.m = per.m THEN s.SalesAmount ELSE 0 END)
+                            - SUM(CASE WHEN s.m = per.year_m THEN s.SalesAmount ELSE 0 END))
+                   / SUM(CASE WHEN s.m = per.year_m THEN s.SalesAmount ELSE 0 END), 1) AS change_pct
+      FROM s JOIN per ON s.m IN (per.m, per.year_m)
+      JOIN DimSalesTerritory AS t ON t.SalesTerritoryKey = s.SalesTerritoryKey
+      GROUP BY t.SalesTerritoryRegion)
+      SELECT territory, sales, sales_year_ago, change_pct,
+             TRIM(CASE WHEN RANK() OVER (ORDER BY sales DESC) = 1 THEN 'top sales ' ELSE '' END
+                  || CASE WHEN RANK() OVER (ORDER BY change_pct DESC) = 1 THEN 'fastest growth'
+                          WHEN RANK() OVER (ORDER BY change_pct ASC) = 1 THEN 'slowest growth'
+                          ELSE '' END) AS note
+      FROM base ORDER BY sales DESC
+    chart: {type: hbar, x: territory, y: [sales, sales_year_ago], labels: {sales: This month, sales_year_ago: Same month last year}, format: usd, style: emphasis}
+    prompt: >-
+      Name the territory whose note says top sales, then the territories whose notes say
+      fastest growth and slowest growth against the same month last year, with their sales
+      and change in percent. Do not rank territories yourself; use only the notes.
+      Write money rounded to one decimal: in millions from $1 million up (for example $5.2 million), in thousands below (for example $538.0 thousand, never $0.5 million). Say "this month" rather than the month's code.
+    max_words: 90
+
+  - id: categories
+    heading: Product categories
+    sql: |
+      WITH p AS (
+        SELECT MIN(m) AS m FROM (
+          SELECT MAX(substr(OrderDate, 1, 7)) AS m FROM FactInternetSales
+          UNION ALL SELECT MAX(substr(OrderDate, 1, 7)) FROM FactResellerSales)),
+      s AS (
+        SELECT substr(OrderDate, 1, 7) AS m, SalesAmount, TotalProductCost, ProductKey FROM FactInternetSales
+        UNION ALL SELECT substr(OrderDate, 1, 7), SalesAmount, TotalProductCost, ProductKey FROM FactResellerSales)
+      , base AS (
+        SELECT pc.EnglishProductCategoryName AS category, ROUND(SUM(s.SalesAmount), 2) AS sales,
+               ROUND(100.0 * SUM(s.SalesAmount - s.TotalProductCost) / SUM(s.SalesAmount), 1) AS margin_pct
+        FROM s JOIN p ON s.m = p.m
+        JOIN DimProduct AS dp ON dp.ProductKey = s.ProductKey
+        JOIN DimProductSubcategory AS ps ON ps.ProductSubcategoryKey = dp.ProductSubcategoryKey
+        JOIN DimProductCategory AS pc ON pc.ProductCategoryKey = ps.ProductCategoryKey
+        GROUP BY pc.EnglishProductCategoryName)
+      SELECT category, sales, margin_pct,
+             TRIM(CASE WHEN RANK() OVER (ORDER BY sales DESC) = 1 THEN 'most sales ' ELSE '' END
+                  || CASE WHEN RANK() OVER (ORDER BY margin_pct ASC) = 1 THEN 'lowest margin'
+                          WHEN RANK() OVER (ORDER BY margin_pct DESC) = 1 THEN 'highest margin'
+                          ELSE '' END) AS note
+      FROM base ORDER BY sales DESC
+    chart: {type: hbar, x: category, y: [sales], labels: {sales: Sales}, format: usd}
+    prompt: >-
+      Say which category has most sales, then give each category's sales and gross margin
+      percent. Name the categories whose notes say lowest margin and highest margin. Do not
+      rank categories yourself; use only the notes.
+      Write money rounded to one decimal: in millions from $1 million up (for example $5.2 million), in thousands below (for example $538.0 thousand, never $0.5 million). Say "this month" rather than the month's code.
+    max_words: 90
+
+  - id: top_models
+    heading: Top five product models
+    sql: |
+      WITH p AS (
+        SELECT MIN(m) AS m FROM (
+          SELECT MAX(substr(OrderDate, 1, 7)) AS m FROM FactInternetSales
+          UNION ALL SELECT MAX(substr(OrderDate, 1, 7)) FROM FactResellerSales)),
+      s AS (
+        SELECT substr(OrderDate, 1, 7) AS m, SalesAmount, TotalProductCost, ProductKey FROM FactInternetSales
+        UNION ALL SELECT substr(OrderDate, 1, 7), SalesAmount, TotalProductCost, ProductKey FROM FactResellerSales)
+      , base AS (
+        SELECT dp.ModelName AS model, ROUND(SUM(s.SalesAmount), 2) AS sales,
+               ROUND(100.0 * SUM(s.SalesAmount - s.TotalProductCost) / SUM(s.SalesAmount), 1) AS margin_pct
+        FROM s JOIN p ON s.m = p.m JOIN DimProduct AS dp ON dp.ProductKey = s.ProductKey
+        GROUP BY dp.ModelName ORDER BY sales DESC LIMIT 5)
+      SELECT model, sales, margin_pct,
+             CASE WHEN RANK() OVER (ORDER BY margin_pct ASC) = 1 THEN 'lowest margin of the five'
+                  WHEN RANK() OVER (ORDER BY margin_pct DESC) = 1 THEN 'highest margin of the five'
+                  ELSE '' END AS note
+      FROM base ORDER BY sales DESC
+    chart: {type: hbar, x: model, y: [sales], labels: {sales: Sales}, format: usd}
+    prompt: >-
+      Name the five top product models in the order given, with their sales. Then name the
+      models whose notes say lowest and highest margin of the five, with their gross margin
+      percent. Do not rank models yourself; use only the notes.
+      Write money rounded to one decimal: in millions from $1 million up (for example $5.2 million), in thousands below (for example $538.0 thousand, never $0.5 million). Say "this month" rather than the month's code.
+    max_words: 80

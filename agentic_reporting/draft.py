@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from agentic_reporting.budget import charge, denied
 
-DRAFT_MAX_TOKENS = 700
+DRAFT_MAX_TOKENS = 700          # floor; a section citing many numbers gets more (draft_max_tokens)
 FACTS_MARKER = "QUERY_RESULT_JSON:"
 REPAIR_MARKER = "REPAIR:"
 
@@ -27,7 +27,9 @@ SYSTEM_PROMPT = """You write one section of a data report from the result of a S
 Rules, in order of importance:
 1. Use ONLY numbers that appear in the facts table. Never compute, round to a different
    precision, estimate, sum or invent a number. Copy each value as given (you may drop
-   trailing decimals only if the result stays within 0.5% of the fact).
+   trailing decimals only if the result stays within 0.5% of the fact). If the instruction
+   asks for amounts in millions or thousands, write the value scaled and rounded to one
+   decimal, for example 5197154.91 as $5.2 million, and cite the exact fact.
 2. Cite every number you write in numbers_used, as {"value": <number>, "fact_key": "<key>"},
    using the exact key from the facts table (for example "revenue[0]").
 3. Write every number from the facts in digits. Write no other number or count at all,
@@ -38,6 +40,13 @@ Rules, in order of importance:
 
 Respond with ONLY a JSON object: {"text": "<prose>", "numbers_used": [{"value": <number>,
 "fact_key": "<key>"}, ...]}"""
+
+
+def draft_max_tokens(section: dict[str, Any], query: dict[str, Any]) -> int:
+    """Room for the prose and one citation (about 25 tokens) per number the rows offer.
+    A fixed 700 cut off a 13-month, two-series trend mid-JSON (found 16 Nov on Gemma)."""
+    n = sum(1 for v in query.get("facts", {}).values() if isinstance(v, int | float))
+    return min(2400, max(DRAFT_MAX_TOKENS, 300 + 2 * int(section.get("max_words", 120)) + 25 * n))
 
 
 class NumberRef(BaseModel):
@@ -96,7 +105,7 @@ def draft_section(provider: Any, section: dict[str, Any], query: dict[str, Any],
             system=SYSTEM_PROMPT,
             messages=[{"role": "user",
                        "content": user_message(section, query, unsupported, previous)}],
-            max_tokens=DRAFT_MAX_TOKENS,
+            max_tokens=draft_max_tokens(section, query),
             schema=SectionDraft,
             cache_system=True,
         )

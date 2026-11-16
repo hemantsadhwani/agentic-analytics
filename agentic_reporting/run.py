@@ -42,6 +42,7 @@ from agentic_reporting.graph import (
 )
 from agentic_reporting.providers.router import PROVIDERS, resolve_name
 from agentic_reporting.render import render
+from agentic_reporting.render_html import render_html
 
 PREVIEW_CHARS = 110
 
@@ -117,6 +118,13 @@ def _outcome(graph, cfg, thread: str, db: str) -> int:
     if _paused(snap):
         print(f"PAUSED thread={thread} (publish?)")
         _preview(state)
+        try:    # the approver reads the same page; kept beside the checkpoint, never in --out
+            page = Path(db).parent / "previews" / f"{thread}.html"
+            page.parent.mkdir(parents=True, exist_ok=True)
+            page.write_text(render_html(state), encoding="utf-8")
+            print(f"  preview: {page}")
+        except OSError as e:
+            print(f"  preview not written: {e}")
         unsupported = unsupported_by_section(state)
         print(f"  unsupported: {unsupported or 'none'}"
               + ("  (will publish as [unverified] if approved)" if unsupported else ""))

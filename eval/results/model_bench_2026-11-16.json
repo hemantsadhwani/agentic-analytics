@@ -1,0 +1,74 @@
+{
+  "run_at": "2026-11-16T04:36:57+00:00",
+  "region": "ap-south-1",
+  "pricing": "AWS Price List API, ap-south-1, read 2026-11-15",
+  "repeats": 3,
+  "results": [
+    {
+      "model": "google.gemma-3-12b-it",
+      "reports": 6,
+      "reports_passed": 6,
+      "sections": 24,
+      "first_draft_pass": 24,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 5,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/sales_mbr.yaml:top_products: 8388.0 is revenue[4], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 47955.0 is revenue[0], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 15776.0 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 8388.0 is revenue[4], but 'revenue' is not named in its sentence"
+      ],
+      "calls": 24,
+      "tokens_in": 13854,
+      "tokens_out": 6229,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.003642,
+      "usd_per_passing_report": 0.000607,
+      "seconds": 45.9,
+      "errors": [],
+      "problems": []
+    },
+    {
+      "model": "deepseek.v3.2",
+      "reports": 6,
+      "reports_passed": 6,
+      "sections": 24,
+      "first_draft_pass": 24,
+      "final_pass": 24,
+      "draft_failures": 0,
+      "attribution_warnings": 41,
+      "required_facts": 45,
+      "required_facts_covered": 45,
+      "warning_samples": [
+        "specs/sales_mbr.yaml:revenue_by_region: 29,832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24,888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 11419.0 is revenue[3], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129,585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1% is change_pct[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 29,832.15 is revenue[1], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:revenue_by_region: 24,888.25 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 12012.5 is revenue[2], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:top_products: 11419.0 is revenue[3], but 'revenue' is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 129,585.85 is revenue[1], but its row (2026-05) is not named in its sentence",
+        "specs/sales_mbr.yaml:month_on_month: 31.1% is change_pct[1], but its row (2026-05) is not named in its sentence"
+      ],
+      "calls": 24,
+      "tokens_in": 21453,
+      "tokens_out": 4486,
+      "modes": [
+        "native"
+      ],
+      "usd": 0.025834,
+      "usd_per_passing_report": 0.004306,
+      "seconds": 58.3,
+      "errors": [],
+      "problems": []
+    }
+  ]
+}

@@ -19,7 +19,8 @@
   written until a human resumes with ``approve``. ``no_gate=True`` skips the pause and
   auto-publishes; anything still unsupported is published as ``[unverified]``.
 * ``render`` replaces any number still unsupported with ``[unverified]`` and records it;
-  ``publish`` writes ``<out_dir>/<spec_name>/<YYYY-MM-DD>.md`` and one ``audit`` row.
+  ``publish`` writes ``<out_dir>/<spec_name>/<YYYY-MM-DD>.md`` and the same report as a
+  self-contained ``.html`` page (tiles, charts, tables), and one ``audit`` row.
 * ``reject`` writes one ``audit`` row with ``decision="rejected"`` and no file.
 
 State is plain JSON, so ``SqliteSaver`` round-trips it. The provider object is not
@@ -250,6 +251,8 @@ def publish_node(state: ReportState) -> dict[str, Any]:
     path = report_path(state)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(state["report_md"], encoding="utf-8")   # idempotent on a replay
+    from agentic_reporting.render_html import render_html
+    path.with_suffix(".html").write_text(render_html(state), encoding="utf-8")
     if state.get("audit_db"):
         audit.record(state["audit_db"], audit_row(state, state.get("approval") or "?", str(path)))
     return {"published_path": str(path),

@@ -20,32 +20,44 @@ def _value(v: Any) -> str:
     return repr(v) if isinstance(v, float) else str(v)
 
 
+def checked_section(state: dict[str, Any], sec: dict[str, Any]) -> dict[str, Any]:
+    """One section after the checker: the redacted text (or None if not drafted), the fact
+    keys the text used, the numbers removed, how many numbers were checked, and the facts.
+    Both renderers (Markdown and HTML) use this, so they can never disagree."""
+    sid = sec["id"]
+    q = state.get("queries", {}).get(sid, {"facts": {}, "dates_ok": []})
+    facts = with_row_count(q.get("facts", {}), len(q.get("rows", [])))
+    dates_ok = q.get("dates_ok", [])
+    d = state.get("drafts", {}).get(sid)
+    if not d:
+        return {"text": None, "failure": state.get("draft_failures", {}).get(sid, "no draft"),
+                "used": [], "removed": [], "checked": 0, "facts": facts}
+    hits = scan(d["text"], facts, dates_ok)
+    text, removed = redact(d["text"], facts, dates_ok, MARK)
+    used = sorted({h.fact_key for h in hits if h.fact_key and "[" in h.fact_key},
+                  key=lambda k: (k.split("[")[0], int(k.split("[")[1].rstrip("]"))))
+    return {"text": text, "failure": None, "used": used, "removed": removed,
+            "checked": len(hits), "facts": facts}
+
+
 def render(state: dict[str, Any]) -> tuple[str, list[dict[str, str]], int]:
     """Return ``(markdown, unverified records, numbers_checked)`` for the current state."""
     spec = state["spec"]
-    queries, drafts = state.get("queries", {}), state.get("drafts", {})
-    failures = state.get("draft_failures", {})
     body: list[str] = []
     sources: list[str] = []
     unverified: list[dict[str, str]] = []
     checked = 0
     for sec in spec["sections"]:
         sid = sec["id"]
-        q = queries.get(sid, {"facts": {}, "dates_ok": []})
-        facts = with_row_count(q.get("facts", {}), len(q.get("rows", [])))
-        dates_ok = q.get("dates_ok", [])
+        cs = checked_section(state, sec)
         body += [f"## {sec['heading']}", ""]
-        d = drafts.get(sid)
-        if not d:
-            body += [f"_Not drafted: {failures.get(sid, 'no draft')}._", ""]
+        if cs["text"] is None:
+            body += [f"_Not drafted: {cs['failure']}._", ""]
             continue
-        hits = scan(d["text"], facts, dates_ok)
-        checked += len(hits)
-        text, removed = redact(d["text"], facts, dates_ok, MARK)
-        unverified += [{"section": sid, "token": t} for t in removed]
-        body += [text, ""]
-        used = sorted({h.fact_key for h in hits if h.fact_key and "[" in h.fact_key},
-                      key=lambda k: (k.split("[")[0], int(k.split("[")[1].rstrip("]"))))
+        checked += cs["checked"]
+        unverified += [{"section": sid, "token": t} for t in cs["removed"]]
+        body += [cs["text"], ""]
+        used, facts = cs["used"], cs["facts"]
         if used:
             sources += [f"### {sec['heading']}", "", "| fact | value |", "|---|---|"]
             sources += [f"| `{k}` | {_value(facts[k])} |" for k in used if is_number(facts[k])]

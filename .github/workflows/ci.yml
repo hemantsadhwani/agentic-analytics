@@ -78,6 +78,11 @@ jobs:
       - run: python samples/load_adventureworks.py
       - run: python -m eval.chat_eval --fake
       - run: python -m eval.rag_eval --fake
+      - name: AdventureWorks monthly report builds offline, every number traced
+        run: |
+          python -m agentic_reporting.run --spec specs/aw_monthly.yaml --provider fake --no-gate             --out /tmp/aw --checkpoint-db /tmp/aw/cp.sqlite | tee /tmp/aw.log
+          grep -q "0 unverified" /tmp/aw.log
+          test -f /tmp/aw/aw_monthly/*.html
 
   lint:
     runs-on: ubuntu-latest

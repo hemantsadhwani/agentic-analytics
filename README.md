@@ -25,6 +25,7 @@ same warehouse and its documents, with the same rule: no number reaches a person
 | Capability | What it means | Status |
 |---|---|---|
 | **Scheduled agentic reports** | A YAML spec per report: one read-only SQL query and one instruction per section. A model writes the prose, a deterministic checker rejects any number the query did not return, a human approves, an audit row records it. | built |
+| **Decision-ready monthly report** | `specs/aw_monthly.yaml` on AdventureWorks: one self-contained HTML page with headline tiles (vs last month and last year), a "needs a decision" list whose rules are SQL (sold below cost, a territory down more than 10%), and a chart per section drawn by code from the query rows. Rankings ("fastest growth", "lowest margin") are labels computed in SQL, so the model never ranks. Every number in the prose checked. Approved example: [HTML page](docs/examples/aw_monthly_2013-11.html) (download and open; self-contained), [Markdown](docs/examples/aw_monthly_2013-11.md). | built |
 | **Model chosen by measurement** | `eval/model_bench.py` runs the golden reports through in-region Bedrock models and ranks them by cost per passing report. | built |
 | **Chatbot: questions over tables** | Governed text-to-SQL on AdventureWorks DW: names resolved to exact values, time words to exact dates (anchored on the data), one read-only query from the linked subset only, the filters checked to be in the SQL, a checked answer that shows its SQL and assumptions, a clarifying question when a word has two meanings, and a refusal for joins that double-count. [ADR-0006](docs/adr/0006-governed-analytics-chatbot.md) | built (single turn) |
 | **Chatbot: questions over documents** | RAG over the product descriptions: hybrid search (keyword BM25 + vectors, rank fusion), the product named in the question narrows the search, every passage cited, every number checked against the cited text, instruction-like text quarantined at ingestion. Measured against "whole corpus in the prompt". [Decisions](docs/guide/12-rag-decisions.md), [this build](docs/guide/13-rag-in-this-build.md) | built over product descriptions; report archive next |
@@ -43,6 +44,7 @@ same warehouse and its documents, with the same rule: no number reaches a person
 | SQL with its filter removed | refused 16 of 16 (negative control, every CI run) | `eval/chat_eval.py` |
 | Documents: retrieval (top 5) vs whole corpus in the prompt, Gemma 3 12B + Titan V2 x 3 runs | 19/19 vs 18/19 correct; recall@5 14/14; 401 vs 5,967 input tokens; $0.000059 vs $0.000668 per question | `eval/results/rag_bench_gemma-3-12b_titan_2026-11-16.json` |
 | Planted "ignore your instructions" chunk | quarantined at ingestion in every run | `eval/rag_eval.py` |
+| Monthly review: wrong claims the number checker cannot catch (rankings, comparisons) | 6 with Gemma when the model ranked; 0 for Gemma and DeepSeek V3.2 once SQL labels the ranks; DeepSeek chosen for readability, about $0.009 per report | `eval/results/aw_monthly_review_2026-11-16.json` |
 
 ## The 60-second version
 

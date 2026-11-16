@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import re
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -55,7 +56,45 @@ def validate_sql(sql: str) -> str:
     return s
 
 
+Format = Literal["usd", "pct", "count", "pts"]
+
+
+class ChartSpec(BaseModel):
+    """A chart drawn by code from the section's own rows: every mark is a query value.
+
+    ``line``: x is time, one line per y column. ``bar``: columns. ``hbar``: ranked horizontal
+    bars (names on the left). ``style: emphasis`` draws the first y column in the accent and
+    the others in a context gray (this year against last year); ``categorical`` gives each
+    series its own hue.
+    """
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["line", "bar", "hbar"]
+    x: str
+    y: list[str] = Field(min_length=1, max_length=3)
+    labels: dict[str, str] = Field(default_factory=dict)     # column → legend name
+    format: Format = "count"
+    style: Literal["categorical", "emphasis"] = "categorical"
+    caption: str | None = None
+
+
+class TileSpec(BaseModel):
+    """One headline number from the section's first row, with its changes (columns too)."""
+    model_config = ConfigDict(extra="forbid")
+
+    label: str
+    value: str                                   # column
+    format: Format = "count"
+    vs_prior: str | None = None                  # column holding the change vs last period
+    vs_year: str | None = None                   # column holding the change vs a year ago
+    change_format: Literal["pct", "pts"] = "pct"
+    up_is_good: bool = True
+
+
 class SectionSpec(BaseModel):
+    """``kind: text`` (default) is prose; ``kpis`` adds headline tiles from the first row;
+    ``decisions`` renders each row as an item needing attention (columns ``severity``:
+    critical | warning | info, ``area``, ``issue``; the rule that picks the rows is the SQL)."""
     model_config = ConfigDict(extra="forbid")   # a typo in a key is an error, not ignored
 
     id: str
@@ -63,6 +102,9 @@ class SectionSpec(BaseModel):
     sql: str
     prompt: str
     max_words: int = Field(default=120, ge=10, le=1000)
+    kind: Literal["text", "kpis", "decisions"] = "text"
+    chart: ChartSpec | None = None
+    tiles: list[TileSpec] = Field(default_factory=list, max_length=6)
 
     @field_validator("id")
     @classmethod
@@ -75,6 +117,14 @@ class SectionSpec(BaseModel):
     @classmethod
     def _sql(cls, v: str) -> str:
         return validate_sql(v)
+
+    @model_validator(mode="after")
+    def _kind(self) -> SectionSpec:
+        if self.kind == "kpis" and not self.tiles:
+            raise ValueError(f"section {self.id}: kind kpis needs tiles")
+        if self.tiles and self.kind != "kpis":
+            raise ValueError(f"section {self.id}: tiles need kind kpis")
+        return self
 
 
 class ReportSpec(BaseModel):

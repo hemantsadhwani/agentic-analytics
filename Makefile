@@ -8,11 +8,11 @@ SPEC ?= specs/sales_mbr.yaml
 DATA ?= samples/sales.sqlite
 Q ?= Which region had the highest net revenue last month?
 
-.PHONY: help install samples test lint eval demo demo-ask demo-chat eval-chat resume list demo-private demo-bedrock \
+.PHONY: help install samples test lint eval demo demo-ask demo-chat demo-report eval-chat resume list demo-private demo-bedrock \
         docker-build docker-demo clean
 
 help:
-	@echo "install samples test lint eval demo demo-ask demo-chat eval-chat resume THREAD=.. DECISION=.. list"
+	@echo "install samples test lint eval demo demo-ask demo-chat demo-report eval-chat resume THREAD=.. DECISION=.. list"
 	@echo "demo-private demo-bedrock docker-build docker-demo clean"
 
 install:
@@ -55,6 +55,12 @@ demo-chat: $(AW)
 eval-chat: $(AW)
 	$(PY) -m eval.chat_eval --fake
 	$(PY) -m eval.rag_eval --fake
+
+# The AdventureWorks monthly review as one HTML page (tiles, needs-a-decision, charts), paused at
+# the gate; the preview path is printed. Offline fake prose; PROVIDER=bedrock-converse
+# LLM_MODEL=deepseek.v3.2 for the model chosen for this report.
+demo-report: $(AW)
+	$(PY) -m agentic_reporting.run --spec specs/aw_monthly.yaml --provider $(PROVIDER)
 
 # make resume THREAD=sales_mbr-20260930T101500Z DECISION=approve   (or reject)
 resume:

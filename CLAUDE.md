@@ -8,14 +8,16 @@ on a local model with no network.
 ## Layout
 
 ```
-agentic_reporting/     the package (spec, data, draft, check, graph, render, audit, run;
+agentic_reporting/     the package (spec, data, draft, check, graph, render (+ render_html: one self-contained page,
+                       tiles/decisions/SVG charts drawn from query rows), audit, run;
                        schema_graph + sql_writer + ask = question → linked schema subset → SQL → read-only result;
                        chat = the chatbot: values (entity index, specs/entities.yaml) + timeframe (dates anchored
                        on the data) + link + SQL with filter check + checked answer + hash-chained audit;
                        no metric in the question → documents route: documents (specs/documents.yaml, injection
                        screen) + embeddings (fake | Titan V2) + doc_index (FTS5 + vectors, RRF) + rag (cited, checked))
 agentic_reporting/providers/   Provider protocol + fake, anthropic, bedrock, ollama
-specs/                 report templates (YAML): sales_mbr, ops_weekly; metrics.yaml = governed metric definitions
+specs/                 report templates (YAML): sales_mbr, ops_weekly, aw_monthly (AdventureWorks; kinds kpis/decisions, charts;
+                       rankings are SQL labels, never model work); metrics.yaml = governed metric definitions
 samples/               SYNTHETIC data generators (seeded); *.sqlite are git-ignored;
                        load_adventureworks.py = Microsoft AdventureWorks DW (MIT), pinned commit +
                        sha256 per file, no customer PII; cache in samples/.cache/ (git-ignored)
