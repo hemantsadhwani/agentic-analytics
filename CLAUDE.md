@@ -33,7 +33,8 @@ demo/site/ + infra/demo/   the PUBLIC demo: static page + Terraform (CloudFront,
                        local: python -m agentic_reporting.demo_api --serve. Kill switch: -var demo_enabled=false.
                        Live since 16 Nov 2026 at https://dz5iavwk61oau.cloudfront.net (profile agentic, ap-south-1)
 docs/                  architecture.md, adr/0001-0006 (0005 = schema graph: the graph holds the map, the warehouse holds the rows;
-                       0006 = the chatbot: understand in code, ask when unsure, show the work); data/ = AdventureWorks
+                       0006 = the chatbot: understand in code, ask when unsure, show the work; 0007 = why a knowledge
+                       graph + the ontology layer, PLANNED: OWL/SKOS, SHACL, SPARQL, graph DB); data/ = AdventureWorks
 ```
 
 ## Commands
