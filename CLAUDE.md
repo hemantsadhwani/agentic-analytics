@@ -34,10 +34,17 @@ demo/site/ + infra/demo/   the PUBLIC demo: static page + Terraform (CloudFront,
                        Live since 16 Nov 2026 at https://dz5iavwk61oau.cloudfront.net (profile agentic, ap-south-1)
 docs/                  architecture.md, adr/0001-0006 (0005 = schema graph: the graph holds the map, the warehouse holds the rows;
                        0006 = the chatbot: understand in code, ask when unsure, show the work; 0007 = why a knowledge
-                       graph + the ontology layer: OWL/SKOS/SHACL/SPARQL built, graph DB planned); data/ = AdventureWorks
+                       graph + the ontology layer: OWL/SKOS/SHACL/SPARQL built, Neo4j + Cypher built); data/ = AdventureWorks
 ontology/              GENERATED from specs/ by agentic_reporting/ontology.py (extra [ontology]: rdflib, pyshacl):
                        OWL classes, SKOS vocabulary, SHACL shapes. Never edit by hand: change specs/entities.yaml
                        or metrics.yaml, run `make ontology`; `make ontology-check` and CI job `ontology` fail on drift
+agentic_reporting/graphdb.py   the same graph in Neo4j 5 (extra [graphdb]: neo4j driver + [ontology]): RDF → labelled
+                       property graph, labels/types from the OWL TBox, loaded under a namespace label (default
+                       :AgenticKG), idempotent; diff() = parity node by node and edge by edge; CypherKG = the
+                       Cypher twins of the SPARQL helpers. AdventureWorks: 1,621 nodes, 3,105 relationships
+agentic_reporting/text_to_cypher.py   governed text-to-Cypher: guard (no writes/CALL/apoc, known labels and
+                       types, typed hops, bounded paths, only resolved names) + namespace scoping + read transaction,
+                       timeout, row cap; eval/cypher_eval.py = 24 golden graph questions, answers from SQL
 ```
 
 ## Commands
@@ -51,7 +58,14 @@ make list                          # audit rows + open threads
 make demo-private                  # needs `ollama serve`; exits 0 with a hint if absent
 make demo-ask                      # question → schema graph → SQL → rows (fake SQL writer answers the 10 golden questions only)
 make demo-chat Q="..."             # the chatbot on AdventureWorks (fake = golden questions only; PROVIDER=bedrock-converse)
+make graphdb graphdb-check         # Neo4j: load AdventureWorks + parity; + tests/test_graphdb.py (needs NEO4J_* env)
+make eval-cypher                   # text-to-Cypher golden set, offline writer; CYPHER_ARGS="--provider bedrock-converse ..."
 ```
+
+Neo4j: the connection comes only from `NEO4J_URI` / `NEO4J_USER` / `NEO4J_PASSWORD`; never commit a
+password. Without them the server tests skip. Tests load into `TestKG*` namespaces and drop them; the
+CLI and the eval use `:AgenticKG`. Built against Neo4j 5.26 Community, localhost only, auth on; keep
+the env file outside the repo.
 
 Run anything that could reach a model with `ANTHROPIC_API_KEY= LOGFIRE_TOKEN=` prefixed
 unless a real call is intended. No key set = the offline `fake` provider.

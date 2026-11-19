@@ -237,3 +237,36 @@ class FakeSQLProvider:
         return LLMResponse(text=answer.model_dump_json(), parsed=answer, provider=self.name,
                            model=self.model, input_tokens=in_tok, output_tokens=len(sql) // 4,
                            cost_usd=0.0, structured_mode="native")
+
+
+class FakeCypherProvider:
+    """Offline Cypher writer: returns the hand-written Cypher for a golden graph question.
+
+    ``known``: question → Cypher (``eval/datasets/golden/cypher_questions_adventureworks.json``).
+    Any other question raises ``ProviderUnavailable``. Like ``FakeSQLProvider``, it proves the
+    pipeline (name resolution, guard, scoping, read-only execution, comparison), not a model.
+    """
+
+    name = "fake"
+    model = "cypher-fake-1"
+
+    def __init__(self, known: dict[str, str]) -> None:
+        self.calls: list[dict[str, Any]] = []
+        self.known = {question_key(q): c for q, c in known.items()}
+
+    def complete(self, *, system: str, messages: list[dict], max_tokens: int,
+                 schema: Any = None, cache_system: bool = True) -> LLMResponse:
+        from agentic_reporting.providers.base import ProviderUnavailable
+        from agentic_reporting.text_to_cypher import CypherAnswer
+
+        self.calls.append({"system": system, "messages": messages})
+        key = question_key(question_from(messages))
+        if key not in self.known:
+            raise ProviderUnavailable("the offline fake Cypher writer knows only the golden graph "
+                                      "questions; for any other question use --provider bedrock-converse")
+        answer = CypherAnswer(cypher=self.known[key],
+                              rationale="hand-written Cypher for a golden question (offline fake)")
+        in_tok = (len(system) + sum(len(str(m.get("content", ""))) for m in messages)) // 4
+        return LLMResponse(text=answer.model_dump_json(), parsed=answer, provider=self.name,
+                           model=self.model, input_tokens=in_tok, output_tokens=len(answer.cypher) // 4,
+                           cost_usd=0.0, structured_mode="native")

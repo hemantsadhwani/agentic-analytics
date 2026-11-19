@@ -9,11 +9,11 @@ DATA ?= samples/sales.sqlite
 Q ?= Which region had the highest net revenue last month?
 
 .PHONY: help install samples test lint eval demo demo-ask demo-chat demo-report eval-chat resume list demo-private demo-bedrock \
-        docker-build docker-demo clean ontology ontology-check
+        docker-build docker-demo clean ontology ontology-check graphdb graphdb-check eval-cypher
 
 help:
 	@echo "install samples test lint eval demo demo-ask demo-chat demo-report eval-chat resume THREAD=.. DECISION=.. list"
-	@echo "demo-private demo-bedrock docker-build docker-demo clean ontology ontology-check"
+	@echo "demo-private demo-bedrock docker-build docker-demo clean ontology ontology-check graphdb graphdb-check eval-cypher"
 
 install:
 	$(PY) -m pip install -e ".[all]"
@@ -71,6 +71,22 @@ ontology:
 ontology-check:
 	$(PY) -m agentic_reporting.ontology --check $(if $(wildcard $(AW)),--db $(AW),)
 	$(PY) -m pytest -q tests/test_ontology.py
+
+# The graph database (ADR-0007 step 5; needs pip install -e ".[graphdb]" and a Neo4j 5 server, connection
+# from NEO4J_URI / NEO4J_USER / NEO4J_PASSWORD only). Loads the AdventureWorks graph into :AgenticKG
+# (idempotent) and checks the database equals the plan, node by node and edge by edge.
+graphdb: $(AW)
+	$(PY) -m agentic_reporting.graphdb --db $(AW)
+
+graphdb-check: $(AW)
+	$(PY) -m agentic_reporting.graphdb --db $(AW) --check
+	$(PY) -m pytest -q tests/test_graphdb.py
+
+# Text-to-Cypher on the golden graph questions. Offline writer by default ($0); real models:
+# make eval-cypher CYPHER_ARGS="--provider bedrock-converse --model google.gemma-3-12b-it --fallback-model deepseek.v3.2"
+CYPHER_ARGS ?= --fake
+eval-cypher: $(AW)
+	$(PY) -m eval.cypher_eval $(CYPHER_ARGS)
 
 # make resume THREAD=sales_mbr-20260930T101500Z DECISION=approve   (or reject)
 resume:

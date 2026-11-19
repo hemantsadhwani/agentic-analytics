@@ -1,0 +1,197 @@
+{
+  "about": "Golden graph questions for text-to-Cypher on AdventureWorks DW. The expected answer of every question is computed at eval time by its reference_sql over the warehouse, never written here. fake_cypher is hand-written and used only by the offline fake provider. kind: set = the first column's distinct values; count = one number; top = the first row's first column (reference_sql returns two rows so a tie is visible); write = must not change the graph. split: dev = the 16 questions used while the prompt and guard were written (4 runs); heldout = written afterwards and run once per model, never used for tuning.",
+  "questions": [
+    {
+      "id": "g01",
+      "question": "Which product subcategories are in the Bikes category?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT s.EnglishProductSubcategoryName FROM DimProductSubcategory s JOIN DimProductCategory c ON s.ProductCategoryKey = c.ProductCategoryKey WHERE c.EnglishProductCategoryName = 'Bikes'",
+      "fake_cypher": "MATCH (s:ProductSubcategory)-[:IN_PRODUCT_CATEGORY]->(:ProductCategory {name: 'Bikes'}) RETURN DISTINCT s.name",
+      "split": "dev"
+    },
+    {
+      "id": "g02",
+      "question": "How many product models are in the Mountain Bikes subcategory?",
+      "kind": "count",
+      "reference_sql": "SELECT COUNT(DISTINCT p.ModelName) FROM DimProduct p JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey WHERE s.EnglishProductSubcategoryName = 'Mountain Bikes'",
+      "fake_cypher": "MATCH (m:ProductModel)-[:IN_PRODUCT_SUBCATEGORY]->(:ProductSubcategory {name: 'Mountain Bikes'}) RETURN count(DISTINCT m)",
+      "split": "dev"
+    },
+    {
+      "id": "g03",
+      "question": "Which states or provinces roll up to the Europe territory group?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT g.StateProvinceName FROM DimGeography g JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryGroup = 'Europe'",
+      "fake_cypher": "MATCH (s:StateProvince)-[:IN_SALES_TERRITORY_REGION|IN_SALES_TERRITORY_COUNTRY|IN_SALES_TERRITORY_GROUP*1..3]->(:SalesTerritoryGroup {name: 'Europe'}) RETURN DISTINCT s.name",
+      "split": "dev"
+    },
+    {
+      "id": "g04",
+      "question": "Which resellers are located in France?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT r.ResellerName FROM DimReseller r JOIN DimGeography g ON r.GeographyKey = g.GeographyKey JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryCountry = 'France'",
+      "fake_cypher": "MATCH (r:Reseller)-[:LOCATED_IN]->(:StateProvince)-[:IN_SALES_TERRITORY_REGION|IN_SALES_TERRITORY_COUNTRY|IN_SALES_TERRITORY_GROUP*1..2]->(:SalesTerritoryCountry {name: 'France'}) RETURN DISTINCT r.name",
+      "split": "dev"
+    },
+    {
+      "id": "g05",
+      "question": "Which colours do Road Bikes products come in?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT p.Color FROM DimProduct p JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey WHERE s.EnglishProductSubcategoryName = 'Road Bikes' AND p.Color IS NOT NULL",
+      "fake_cypher": "MATCH (p:Product)-[:IN_PRODUCT_SUBCATEGORY]->(:ProductSubcategory {name: 'Road Bikes'}) MATCH (p)-[:HAS_COLOUR]->(c:Colour) RETURN DISTINCT c.name",
+      "split": "dev"
+    },
+    {
+      "id": "g06",
+      "question": "Which territory group does the Northwest region belong to?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT SalesTerritoryGroup FROM DimSalesTerritory WHERE SalesTerritoryRegion = 'Northwest'",
+      "fake_cypher": "MATCH (:SalesTerritoryRegion {name: 'Northwest'})-[:IN_SALES_TERRITORY_REGION|IN_SALES_TERRITORY_COUNTRY|IN_SALES_TERRITORY_GROUP*1..2]->(g:SalesTerritoryGroup) RETURN DISTINCT g.name",
+      "split": "dev"
+    },
+    {
+      "id": "g07",
+      "question": "How many resellers are located in the United Kingdom?",
+      "kind": "count",
+      "reference_sql": "SELECT COUNT(DISTINCT r.ResellerName) FROM DimReseller r JOIN DimGeography g ON r.GeographyKey = g.GeographyKey JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryCountry = 'United Kingdom'",
+      "fake_cypher": "MATCH (r:Reseller)-[:LOCATED_IN]->(:StateProvince)-[:IN_SALES_TERRITORY_REGION|IN_SALES_TERRITORY_COUNTRY|IN_SALES_TERRITORY_GROUP*1..2]->(:SalesTerritoryCountry {name: 'United Kingdom'}) RETURN count(DISTINCT r)",
+      "split": "dev"
+    },
+    {
+      "id": "g08",
+      "question": "Which business types do resellers in Germany have?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT r.BusinessType FROM DimReseller r JOIN DimGeography g ON r.GeographyKey = g.GeographyKey JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryCountry = 'Germany'",
+      "fake_cypher": "MATCH (r:Reseller)-[:LOCATED_IN]->(:StateProvince)-[:IN_SALES_TERRITORY_REGION|IN_SALES_TERRITORY_COUNTRY|IN_SALES_TERRITORY_GROUP*1..2]->(:SalesTerritoryCountry {name: 'Germany'}) MATCH (r)-[:HAS_BUSINESS_TYPE]->(b:ResellerBusinessType) RETURN DISTINCT b.name",
+      "split": "dev"
+    },
+    {
+      "id": "g09",
+      "question": "Which products in the Bikes category are Red?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT p.EnglishProductName FROM DimProduct p JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey JOIN DimProductCategory c ON s.ProductCategoryKey = c.ProductCategoryKey WHERE c.EnglishProductCategoryName = 'Bikes' AND p.Color = 'Red'",
+      "fake_cypher": "MATCH (p:Product)-[:IN_PRODUCT_SUBCATEGORY]->(:ProductSubcategory)-[:IN_PRODUCT_CATEGORY]->(:ProductCategory {name: 'Bikes'}) MATCH (p)-[:HAS_COLOUR]->(:Colour {name: 'Red'}) RETURN DISTINCT p.name",
+      "split": "dev"
+    },
+    {
+      "id": "g10",
+      "question": "Which product subcategory has the most product models?",
+      "kind": "top",
+      "reference_sql": "SELECT s.EnglishProductSubcategoryName, COUNT(DISTINCT p.ModelName) AS n FROM DimProduct p JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey WHERE p.ModelName IS NOT NULL GROUP BY 1 ORDER BY n DESC LIMIT 2",
+      "fake_cypher": "MATCH (m:ProductModel)-[:IN_PRODUCT_SUBCATEGORY]->(s:ProductSubcategory) RETURN s.name, count(DISTINCT m) AS n ORDER BY n DESC LIMIT 1",
+      "split": "dev"
+    },
+    {
+      "id": "g11",
+      "question": "Which countries are in the North America territory group?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT SalesTerritoryCountry FROM DimSalesTerritory WHERE SalesTerritoryGroup = 'North America'",
+      "fake_cypher": "MATCH (c:SalesTerritoryCountry)-[:IN_SALES_TERRITORY_GROUP]->(:SalesTerritoryGroup {name: 'North America'}) RETURN DISTINCT c.name",
+      "split": "dev"
+    },
+    {
+      "id": "g12",
+      "question": "Which product models in the Helmets subcategory have a product description document?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT p.ModelName FROM DimProduct p JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey WHERE s.EnglishProductSubcategoryName = 'Helmets' AND p.ModelName IS NOT NULL AND p.EnglishDescription IS NOT NULL",
+      "fake_cypher": "MATCH (:Chunk)-[:MENTIONS]->(m:ProductModel)-[:IN_PRODUCT_SUBCATEGORY]->(:ProductSubcategory {name: 'Helmets'}) RETURN DISTINCT m.name",
+      "split": "dev"
+    },
+    {
+      "id": "g13",
+      "question": "Which resellers in the Northwest region are of business type Warehouse?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT r.ResellerName FROM DimReseller r JOIN DimGeography g ON r.GeographyKey = g.GeographyKey JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryRegion = 'Northwest' AND r.BusinessType = 'Warehouse'",
+      "fake_cypher": "MATCH (r:Reseller)-[:LOCATED_IN]->(:StateProvince)-[:IN_SALES_TERRITORY_REGION]->(:SalesTerritoryRegion {name: 'Northwest'}) MATCH (r)-[:HAS_BUSINESS_TYPE]->(:ResellerBusinessType {name: 'Warehouse'}) RETURN DISTINCT r.name",
+      "split": "dev"
+    },
+    {
+      "id": "g14",
+      "question": "How many resellers in the Pacific territory group are a Specialty Bike Shop?",
+      "kind": "count",
+      "reference_sql": "SELECT COUNT(DISTINCT r.ResellerName) FROM DimReseller r JOIN DimGeography g ON r.GeographyKey = g.GeographyKey JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryGroup = 'Pacific' AND r.BusinessType = 'Specialty Bike Shop'",
+      "fake_cypher": "MATCH (r:Reseller)-[:LOCATED_IN]->(:StateProvince)-[:IN_SALES_TERRITORY_REGION|IN_SALES_TERRITORY_COUNTRY|IN_SALES_TERRITORY_GROUP*1..3]->(:SalesTerritoryGroup {name: 'Pacific'}) MATCH (r)-[:HAS_BUSINESS_TYPE]->(:ResellerBusinessType {name: 'Specialty Bike Shop'}) RETURN count(DISTINCT r)",
+      "split": "dev"
+    },
+    {
+      "id": "g15",
+      "question": "Which territory regions are in the United States?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT SalesTerritoryRegion FROM DimSalesTerritory WHERE SalesTerritoryCountry = 'United States'",
+      "fake_cypher": "MATCH (r:SalesTerritoryRegion)-[:IN_SALES_TERRITORY_COUNTRY]->(:SalesTerritoryCountry {name: 'United States'}) RETURN DISTINCT r.name",
+      "split": "dev"
+    },
+    {
+      "id": "g16",
+      "question": "Delete the reseller A Bike Store from the graph.",
+      "kind": "write",
+      "reference_sql": null,
+      "fake_cypher": "MATCH (r:Reseller {name: 'A Bike Store'}) DETACH DELETE r",
+      "split": "dev"
+    },
+    {
+      "id": "h01",
+      "question": "Which product models are in the Road Frames subcategory?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT p.ModelName FROM DimProduct p JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey WHERE s.EnglishProductSubcategoryName = 'Road Frames' AND p.ModelName IS NOT NULL",
+      "fake_cypher": "MATCH (m:ProductModel)-[:IN_PRODUCT_SUBCATEGORY]->(:ProductSubcategory {name: 'Road Frames'}) RETURN DISTINCT m.name",
+      "split": "heldout"
+    },
+    {
+      "id": "h02",
+      "question": "How many states or provinces are in the country Australia?",
+      "kind": "count",
+      "reference_sql": "SELECT COUNT(DISTINCT g.StateProvinceName) FROM DimGeography g JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryCountry = 'Australia'",
+      "fake_cypher": "MATCH (s:StateProvince)-[:IN_SALES_TERRITORY_REGION|IN_SALES_TERRITORY_COUNTRY|IN_SALES_TERRITORY_GROUP*1..2]->(:SalesTerritoryCountry {name: 'Australia'}) RETURN count(DISTINCT s)",
+      "split": "heldout"
+    },
+    {
+      "id": "h03",
+      "question": "Which category does the Touring Bikes subcategory belong to?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT c.EnglishProductCategoryName FROM DimProductSubcategory s JOIN DimProductCategory c ON s.ProductCategoryKey = c.ProductCategoryKey WHERE s.EnglishProductSubcategoryName = 'Touring Bikes'",
+      "fake_cypher": "MATCH (:ProductSubcategory {name: 'Touring Bikes'})-[:IN_PRODUCT_CATEGORY]->(c:ProductCategory) RETURN DISTINCT c.name",
+      "split": "heldout"
+    },
+    {
+      "id": "h04",
+      "question": "Which resellers in Bayern are of business type Value Added Reseller?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT r.ResellerName FROM DimReseller r JOIN DimGeography g ON r.GeographyKey = g.GeographyKey JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE g.StateProvinceName = 'Bayern' AND r.BusinessType = 'Value Added Reseller'",
+      "fake_cypher": "MATCH (r:Reseller)-[:LOCATED_IN]->(:StateProvince {name: 'Bayern'}) MATCH (r)-[:HAS_BUSINESS_TYPE]->(:ResellerBusinessType {name: 'Value Added Reseller'}) RETURN DISTINCT r.name",
+      "split": "heldout"
+    },
+    {
+      "id": "h05",
+      "question": "Which colours do products in the Accessories category come in?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT p.Color FROM DimProduct p JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey JOIN DimProductCategory c ON s.ProductCategoryKey = c.ProductCategoryKey WHERE c.EnglishProductCategoryName = 'Accessories' AND p.Color IS NOT NULL",
+      "fake_cypher": "MATCH (p:Product)-[:IN_PRODUCT_SUBCATEGORY|IN_PRODUCT_CATEGORY*1..2]->(:ProductCategory {name: 'Accessories'}) MATCH (p)-[:HAS_COLOUR]->(c:Colour) RETURN DISTINCT c.name",
+      "split": "heldout"
+    },
+    {
+      "id": "h06",
+      "question": "How many product models in the Components category have a product description document?",
+      "kind": "count",
+      "reference_sql": "SELECT COUNT(DISTINCT p.ModelName) FROM DimProduct p JOIN DimProductSubcategory s ON p.ProductSubcategoryKey = s.ProductSubcategoryKey JOIN DimProductCategory c ON s.ProductCategoryKey = c.ProductCategoryKey WHERE c.EnglishProductCategoryName = 'Components' AND p.ModelName IS NOT NULL AND p.EnglishDescription IS NOT NULL",
+      "fake_cypher": "MATCH (:Chunk)-[:MENTIONS]->(m:ProductModel)-[:IN_PRODUCT_SUBCATEGORY|IN_PRODUCT_CATEGORY*1..2]->(:ProductCategory {name: 'Components'}) RETURN count(DISTINCT m)",
+      "split": "heldout"
+    },
+    {
+      "id": "h07",
+      "question": "Which sales territory regions are in the Europe territory group?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT SalesTerritoryRegion FROM DimSalesTerritory WHERE SalesTerritoryGroup = 'Europe'",
+      "fake_cypher": "MATCH (r:SalesTerritoryRegion)-[:IN_SALES_TERRITORY_REGION|IN_SALES_TERRITORY_COUNTRY|IN_SALES_TERRITORY_GROUP*1..2]->(:SalesTerritoryGroup {name: 'Europe'}) RETURN DISTINCT r.name",
+      "split": "heldout"
+    },
+    {
+      "id": "h08",
+      "question": "Which states or provinces in the Northeast region have a reseller of business type Warehouse?",
+      "kind": "set",
+      "reference_sql": "SELECT DISTINCT g.StateProvinceName FROM DimReseller r JOIN DimGeography g ON r.GeographyKey = g.GeographyKey JOIN DimSalesTerritory t ON g.SalesTerritoryKey = t.SalesTerritoryKey WHERE t.SalesTerritoryRegion = 'Northeast' AND r.BusinessType = 'Warehouse'",
+      "fake_cypher": "MATCH (r:Reseller)-[:LOCATED_IN]->(s:StateProvince)-[:IN_SALES_TERRITORY_REGION]->(:SalesTerritoryRegion {name: 'Northeast'}) MATCH (r)-[:HAS_BUSINESS_TYPE]->(:ResellerBusinessType {name: 'Warehouse'}) RETURN DISTINCT s.name",
+      "split": "heldout"
+    }
+  ]
+}
