@@ -1,6 +1,8 @@
 # ADR-0007: Why the assistant needs a knowledge graph, and the ontology layer on top
 
-**Status:** problem accepted · 2026-11-17. Ontology layer: **planned, not built.**
+**Status:** problem accepted · 2026-11-17. Ontology layer: OWL, SKOS, SHACL and SPARQL **built and tested**
+2026-11-19 (offline, generated from the specs); graph database and Cypher **planned, not built**; the
+chatbot does **not** query the RDF graph yet.
 
 ## Problem
 
@@ -43,27 +45,34 @@ validation in CI.
 | Hierarchy in the graph: `value_of`, `belongs_to` (product → subcategory → category, state → region) | `values.py` `add_to_graph` | `tests/` |
 | Documents linked to rows: chunks carry entity tags; a named product or subcategory filters retrieval | `documents.py`, `doc_index.py` | recall@5 14/14, RAG 19/19 |
 | Governed vocabulary with synonyms and owners, reviewed in git | `specs/*.yaml` | ADR-0006 |
+| The same graph in W3C standards: OWL classes, SKOS concepts, SHACL shapes, SPARQL roll-ups (below) | `ontology.py`, `ontology/*.ttl` | `tests/test_ontology.py` |
 
 Entities come from the warehouse's master data, not from LLM extraction: that data already exists
 and is exact. Category words are deliberately not used as filters (measured 16 Nov, see
 `doc_index.py`).
 
-## Decision (planned): an ontology layer over the existing graph
+## Decision: an ontology layer over the existing graph
 
-Problem 6, and interoperability with other teams' data, need the graph expressed in standards:
-
-1. **OWL** classes and properties for the entity types and relations, generated from
-   `specs/entities.yaml` and the schema graph (rdflib).
-2. **SKOS** for the product taxonomy and the territory hierarchy: `prefLabel`, `altLabel` (the
-   synonyms the value index already uses), `broader`.
-3. **SHACL** shapes in CI: every product has exactly one subcategory, labels unique per class,
-   every chunk's entity tags resolve to a node.
-4. **SPARQL** queries for the roll-ups the chatbot needs, with tests that they match the SQL results.
-5. The same graph in a **graph database** (Neo4j or Amazon Neptune) with **Cypher**, retrieval routed
-   through it, and the in-memory networkx path kept as the zero-infrastructure default.
-
+Problem 6, and interoperability with other teams' data, need the graph expressed in standards.
 Each step is built, tested and measured against the success measures above before any claim of it
-appears outside this repo.
+appears outside this repo. Code: `agentic_reporting/ontology.py` (optional extra `[ontology]`:
+rdflib, pyshacl); tests: `tests/test_ontology.py`; CI job `ontology`.
+
+| # | Step | Status | What exists, and the gap |
+|---|---|---|---|
+| 1 | **OWL** classes and properties, generated from `specs/entities.yaml` (rdflib) | **built** | `ontology/agentic-analytics.ttl`: 23 classes (a subclass tree under `BusinessEntity`, itself a `skos:Concept`), 11 object properties (5 hierarchy levels as sub-properties of `skos:broader`, 4 relations, `mentions`, `derivesFrom`), 11 datatype properties. The spec gained `class`, `subclass_of`, `broader` and `relations` keys; the value index still reads only `column` and `label`. |
+| 2 | **SKOS** for the taxonomy and the territory hierarchy | **built** | `ontology/vocabulary.ttl`: 6 concept schemes; 14 governed metrics with `prefLabel`, `altLabel` (their synonyms) and `definition`; 4 ambiguous words ("sales") as broader concepts whose `narrower` are the metrics they may mean. Instances: every value is a concept with `prefLabel`, `broader`/`narrower`, and `hiddenLabel` = the value index's match key. **Gap:** values have no synonyms in the data ("MTB-200" is not in AdventureWorks), so no entity `altLabel` is invented. |
+| 3 | **SHACL** shapes in CI | **built** | `ontology/shapes.ttl`: 11 node shapes, 27 property shapes, 3 SPARQL constraints (label unique per class, no hierarchy cycle, SKOS S13). Every chunk's entity tags must resolve to a typed node. One mutation per constraint (71 in all) proves each one fires. **Gap:** "every product has exactly one subcategory" is false on AdventureWorks (209 of 504 product names, parts never sold, have none), so products get **at most one**; models, subcategories, states, regions and countries get **exactly one**. |
+| 4 | **SPARQL** roll-ups tested against SQL | **built** | Product to category, models per subcategory, state to region to country to group, resellers under a territory, colour within a category, document chunks per subcategory: each equals the SQL answer, on AdventureWorks DW and on a fixture. A sales total filtered by graph-resolved names equals the SQL join. Name resolution equals the value index for every match key. |
+| 5 | **Graph database** (Neo4j or Amazon Neptune) with **Cypher**, retrieval routed through it | **planned, not built** | No graph database. The chatbot and RAG still use the networkx graph and the value index; the RDF graph is a parallel, tested representation, not yet in the answer path. |
+
+The instance graph is built per database and not committed (it is derived from the warehouse, like
+the `.sqlite` files). On AdventureWorks DW: 12,804 triples, 1,485 value concepts, 118 document
+chunks, 354 `mentions` links. `make ontology` rebuilds it.
+
+**Not done yet:** a versioned vocabulary history (problem 6 is covered only by a spec digest in
+`owl:versionInfo` and a CI drift check); answers that cite the concepts they used; OWL reasoning
+(validation is SHACL; no reasoner runs).
 
 ## Not doing (now)
 
@@ -78,3 +87,20 @@ appears outside this repo.
   edit.
 - A graph database adds infrastructure; it is justified only by traversals the in-memory graph
   cannot serve, so the networkx path stays.
+
+## Build note, 19 Nov 2026
+
+- `python -m agentic_reporting.ontology` writes the three `.ttl` files from the specs. `--check`
+  fails when they are stale. `--db samples/adventureworks.sqlite` also builds the instance graph
+  and validates it with SHACL (13,323 triples with the TBox; conforms; about 17 s).
+- `tests/test_ontology.py`: 110 tests, all passing with AdventureWorks loaded. 12 skip without
+  it; the whole file skips without the extra. 71 are mutation tests, one per SHACL constraint.
+  7 SPARQL-against-SQL tests run on two databases each (14); 2 more check SPARQL name resolution
+  against the value index, 1 checks metric words against the schema linker. 5 bad specs are refused.
+- Full suite: 291 passed (181 existing + 110 new). The offline evals still pass with `--fake`:
+  report, schema linking, chat and RAG.
+- Found, not fixed: the schema linker asks "which sales?" for "units sold". It takes the first
+  ambiguous group with any matching word, here "sold". The SKOS graph resolves it to the units
+  group. The test pins this as a known gap.
+- Found: the value graph's `belongs_to` edges follow every foreign key, so they also link colours
+  and business types to subcategories and states. The ontology uses only the declared hierarchy.

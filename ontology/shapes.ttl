@@ -1,0 +1,277 @@
+@prefix ar: <https://github.com/hemantsadhwani/agentic-analytics/ontology#> .
+@prefix ars: <https://github.com/hemantsadhwani/agentic-analytics/ontology/shapes#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ars:BusinessEntity a sh:NodeShape ;
+    rdfs:comment "Every business entity (every value in the graph)."@en ;
+    sh:property ars:BusinessEntity-column,
+        ars:BusinessEntity-inScheme,
+        ars:BusinessEntity-prefLabel ;
+    sh:sparql ars:BroaderAcyclic,
+        ars:UniqueLabelPerClass ;
+    sh:targetClass ar:BusinessEntity .
+
+ars:Chunk a sh:NodeShape ;
+    rdfs:comment "Every document chunk."@en ;
+    sh:property ars:Chunk-contentHash,
+        ars:Chunk-label,
+        ars:Chunk-mentions,
+        ars:Chunk-source ;
+    sh:targetClass ar:Chunk .
+
+ars:Metric a sh:NodeShape ;
+    rdfs:comment "Every governed metric."@en ;
+    sh:property ars:Metric-definition,
+        ars:Metric-derivesFrom,
+        ars:Metric-expression,
+        ars:Metric-inScheme,
+        ars:Metric-metricName,
+        ars:Metric-owner,
+        ars:Metric-prefLabel,
+        ars:Metric-table ;
+    sh:sparql ars:PrefAltDisjoint ;
+    sh:targetClass ar:Metric .
+
+ars:MetricGroup a sh:NodeShape ;
+    rdfs:comment "Every ambiguous metric word."@en ;
+    sh:property ars:MetricGroup-narrower,
+        ars:MetricGroup-prefLabel ;
+    sh:targetClass ar:MetricGroup .
+
+ars:Product a sh:NodeShape ;
+    rdfs:comment "Every product."@en ;
+    sh:property ars:Product-hasColour,
+        ars:Product-hasModel,
+        ars:Product-inProductSubcategory ;
+    sh:targetClass ar:Product .
+
+ars:ProductModel a sh:NodeShape ;
+    rdfs:comment "Every product model."@en ;
+    sh:property ars:ProductModel-inProductSubcategory ;
+    sh:targetClass ar:ProductModel .
+
+ars:ProductSubcategory a sh:NodeShape ;
+    rdfs:comment "Every product subcategory."@en ;
+    sh:property ars:ProductSubcategory-inProductCategory ;
+    sh:targetClass ar:ProductSubcategory .
+
+ars:Reseller a sh:NodeShape ;
+    rdfs:comment "Every reseller."@en ;
+    sh:property ars:Reseller-hasBusinessType,
+        ars:Reseller-locatedIn ;
+    sh:targetClass ar:Reseller .
+
+ars:SalesTerritoryCountry a sh:NodeShape ;
+    rdfs:comment "Every sales territory country."@en ;
+    sh:property ars:SalesTerritoryCountry-inSalesTerritoryGroup ;
+    sh:targetClass ar:SalesTerritoryCountry .
+
+ars:SalesTerritoryRegion a sh:NodeShape ;
+    rdfs:comment "Every sales territory region."@en ;
+    sh:property ars:SalesTerritoryRegion-inSalesTerritoryCountry ;
+    sh:targetClass ar:SalesTerritoryRegion .
+
+ars:StateProvince a sh:NodeShape ;
+    rdfs:comment "Every state or province (of the customer or reseller)."@en ;
+    sh:property ars:StateProvince-inSalesTerritoryRegion ;
+    sh:targetClass ar:StateProvince .
+
+ars:BroaderAcyclic a sh:SPARQLConstraint ;
+    sh:message "The hierarchy has a cycle through this value."@en ;
+    sh:select "SELECT $this WHERE { $this <http://www.w3.org/2004/02/skos/core#broader>+ $this }" .
+
+ars:BusinessEntity-column a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one warehouse column."@en ;
+    sh:minCount 1 ;
+    sh:path ar:column .
+
+ars:BusinessEntity-inScheme a sh:PropertyShape ;
+    sh:class skos:ConceptScheme ;
+    sh:message "In a concept scheme."@en ;
+    sh:minCount 1 ;
+    sh:path skos:inScheme .
+
+ars:BusinessEntity-prefLabel a sh:PropertyShape ;
+    sh:datatype rdf:langString ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one English label."@en ;
+    sh:minCount 1 ;
+    sh:path skos:prefLabel .
+
+ars:Chunk-contentHash a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one SHA-256 content hash."@en ;
+    sh:minCount 1 ;
+    sh:path ar:contentHash ;
+    sh:pattern "^[0-9a-f]{64}$" .
+
+ars:Chunk-label a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one title."@en ;
+    sh:minCount 1 ;
+    sh:path rdfs:label .
+
+ars:Chunk-mentions a sh:PropertyShape ;
+    sh:class ar:BusinessEntity ;
+    sh:message "Every entity tag resolves to a value in the graph."@en ;
+    sh:path ar:mentions .
+
+ars:Chunk-source a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one source."@en ;
+    sh:minCount 1 ;
+    sh:path ar:source .
+
+ars:Metric-definition a sh:PropertyShape ;
+    sh:datatype rdf:langString ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one definition."@en ;
+    sh:minCount 1 ;
+    sh:path skos:definition .
+
+ars:Metric-derivesFrom a sh:PropertyShape ;
+    sh:class ar:Metric ;
+    sh:message "Derives only from governed metrics."@en ;
+    sh:path ar:derivesFrom .
+
+ars:Metric-expression a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one expression."@en ;
+    sh:minCount 1 ;
+    sh:path ar:expression .
+
+ars:Metric-inScheme a sh:PropertyShape ;
+    sh:class skos:ConceptScheme ;
+    sh:message "In a concept scheme."@en ;
+    sh:minCount 1 ;
+    sh:path skos:inScheme .
+
+ars:Metric-metricName a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one metricName."@en ;
+    sh:minCount 1 ;
+    sh:path ar:metricName .
+
+ars:Metric-owner a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one owner."@en ;
+    sh:minCount 1 ;
+    sh:path ar:owner .
+
+ars:Metric-prefLabel a sh:PropertyShape ;
+    sh:datatype rdf:langString ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one prefLabel."@en ;
+    sh:minCount 1 ;
+    sh:path skos:prefLabel .
+
+ars:Metric-table a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one table."@en ;
+    sh:minCount 1 ;
+    sh:path ar:table .
+
+ars:MetricGroup-narrower a sh:PropertyShape ;
+    sh:class ar:Metric ;
+    sh:message "Names at least two governed metrics."@en ;
+    sh:minCount 2 ;
+    sh:path skos:narrower .
+
+ars:MetricGroup-prefLabel a sh:PropertyShape ;
+    sh:datatype rdf:langString ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one label."@en ;
+    sh:minCount 1 ;
+    sh:path skos:prefLabel .
+
+ars:PrefAltDisjoint a sh:SPARQLConstraint ;
+    sh:message "A synonym equals the preferred label (SKOS S13)."@en ;
+    sh:select """
+SELECT $this ?value WHERE { $this <http://www.w3.org/2004/02/skos/core#prefLabel> ?value ; <http://www.w3.org/2004/02/skos/core#altLabel> ?value }""" .
+
+ars:Product-hasColour a sh:PropertyShape ;
+    sh:class ar:Colour ;
+    sh:maxCount 1 ;
+    sh:message "hasColour: a colour, at most one."@en ;
+    sh:path ar:hasColour .
+
+ars:Product-hasModel a sh:PropertyShape ;
+    sh:class ar:ProductModel ;
+    sh:maxCount 1 ;
+    sh:message "hasModel: a product model, at most one."@en ;
+    sh:path ar:hasModel .
+
+ars:Product-inProductSubcategory a sh:PropertyShape ;
+    sh:class ar:ProductSubcategory ;
+    sh:maxCount 1 ;
+    sh:message "At most one product subcategory."@en ;
+    sh:path ar:inProductSubcategory .
+
+ars:ProductModel-inProductSubcategory a sh:PropertyShape ;
+    sh:class ar:ProductSubcategory ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one product subcategory."@en ;
+    sh:minCount 1 ;
+    sh:path ar:inProductSubcategory .
+
+ars:ProductSubcategory-inProductCategory a sh:PropertyShape ;
+    sh:class ar:ProductCategory ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one product category."@en ;
+    sh:minCount 1 ;
+    sh:path ar:inProductCategory .
+
+ars:Reseller-hasBusinessType a sh:PropertyShape ;
+    sh:class ar:ResellerBusinessType ;
+    sh:message "hasBusinessType: a reseller business type."@en ;
+    sh:path ar:hasBusinessType .
+
+ars:Reseller-locatedIn a sh:PropertyShape ;
+    sh:class ar:StateProvince ;
+    sh:message "locatedIn: a state or province (of the customer or reseller)."@en ;
+    sh:path ar:locatedIn .
+
+ars:SalesTerritoryCountry-inSalesTerritoryGroup a sh:PropertyShape ;
+    sh:class ar:SalesTerritoryGroup ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one sales territory group."@en ;
+    sh:minCount 1 ;
+    sh:path ar:inSalesTerritoryGroup .
+
+ars:SalesTerritoryRegion-inSalesTerritoryCountry a sh:PropertyShape ;
+    sh:class ar:SalesTerritoryCountry ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one sales territory country."@en ;
+    sh:minCount 1 ;
+    sh:path ar:inSalesTerritoryCountry .
+
+ars:StateProvince-inSalesTerritoryRegion a sh:PropertyShape ;
+    sh:class ar:SalesTerritoryRegion ;
+    sh:maxCount 1 ;
+    sh:message "Exactly one sales territory region."@en ;
+    sh:minCount 1 ;
+    sh:path ar:inSalesTerritoryRegion .
+
+ars:UniqueLabelPerClass a sh:SPARQLConstraint ;
+    sh:message "Two values of one class share a label."@en ;
+    sh:select """
+SELECT $this ?value WHERE {
+  $this <http://www.w3.org/2004/02/skos/core#prefLabel> ?value ; a ?cls .
+  ?cls <http://www.w3.org/2000/01/rdf-schema#subClassOf>+ <https://github.com/hemantsadhwani/agentic-analytics/ontology#BusinessEntity> .
+  ?other <http://www.w3.org/2004/02/skos/core#prefLabel> ?value ; a ?cls .
+  FILTER (?other != $this)
+}""" .
+

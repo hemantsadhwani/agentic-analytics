@@ -10,36 +10,126 @@
 # as an alternative, shown to the user as an assumption.
 #
 # A column is used only if it exists in the database, so one file serves every sample.
+#
+# The ontology (agentic_reporting/ontology.py, ADR-0007) is generated from this file too; the
+# value index reads only `column` and `label`. Ontology keys:
+#
+#   class      the OWL class of the column's values (ar:<class>); listed under `classes:`
+#   broader    the entity column a value rolls up to: one parent per value, written as
+#              skos:broader and ar:in<ParentClass>. SHACL checks at most one parent, and
+#              exactly one unless `broader_required: false`.
+#   relations  links that are not a hierarchy: {property, to, functional}. `functional: true`
+#              means at most one per value (checked by SHACL).
+#
+# Every relation is read from the warehouse (a foreign key or the same row); none is written
+# here by hand. What the data actually does was measured on AdventureWorks DW, 19 Nov 2026,
+# and is noted where it matters.
+classes:
+  - name: BusinessEntity
+    label: business entity
+    comment: A named thing in the business vocabulary, read from warehouse master data.
+  - name: ProductTaxonomyLevel
+    label: product taxonomy level
+    subclass_of: BusinessEntity
+    scheme: Product taxonomy
+    comment: Product, product model, subcategory or category.
+  - name: Territory
+    label: territory
+    subclass_of: BusinessEntity
+    scheme: Sales territory hierarchy
+    comment: A place sales are booked to, from a state or province up to a territory group.
+  - name: Party
+    label: party
+    subclass_of: BusinessEntity
+    scheme: Parties
+    comment: A business the company sells through.
+  - name: Attribute
+    label: attribute
+    subclass_of: BusinessEntity
+    scheme: Attributes
+    comment: A descriptive value used as a filter (colour, business type, segment).
+  - name: Offer
+    label: offer
+    subclass_of: BusinessEntity
+    scheme: Offers
+    comment: A promotion or discount.
+
 entities:
   # --- AdventureWorks DW ----------------------------------------------------------------
   - column: DimProduct.EnglishProductName
     label: product
+    class: Product
+    subclass_of: ProductTaxonomyLevel
+    broader: DimProductSubcategory.EnglishProductSubcategoryName
+    # 209 of 504 product names (parts never sold) have no subcategory and no model.
+    broader_required: false
+    relations:
+      - {property: hasModel, to: DimProduct.ModelName, functional: true}
+      - {property: hasColour, to: DimProduct.Color, functional: true}
   - column: DimProduct.ModelName
     label: product model
+    class: ProductModel
+    subclass_of: ProductTaxonomyLevel
+    broader: DimProductSubcategory.EnglishProductSubcategoryName
   - column: DimProductSubcategory.EnglishProductSubcategoryName
     label: product subcategory
+    class: ProductSubcategory
+    subclass_of: ProductTaxonomyLevel
+    broader: DimProductCategory.EnglishProductCategoryName
   - column: DimProductCategory.EnglishProductCategoryName
     label: product category
+    class: ProductCategory
+    subclass_of: ProductTaxonomyLevel
   - column: DimProduct.Color
     label: colour
+    class: Colour
+    subclass_of: Attribute
   - column: DimSalesTerritory.SalesTerritoryRegion
     label: sales territory region
+    class: SalesTerritoryRegion
+    subclass_of: Territory
+    broader: DimSalesTerritory.SalesTerritoryCountry
   - column: DimSalesTerritory.SalesTerritoryCountry
     label: sales territory country
+    class: SalesTerritoryCountry
+    subclass_of: Territory
+    broader: DimSalesTerritory.SalesTerritoryGroup
   - column: DimSalesTerritory.SalesTerritoryGroup
     label: sales territory group
+    class: SalesTerritoryGroup
+    subclass_of: Territory
   - column: DimGeography.StateProvinceName
     label: state or province (of the customer or reseller)
+    class: StateProvince
+    subclass_of: Territory
+    broader: DimSalesTerritory.SalesTerritoryRegion
   - column: DimReseller.ResellerName
     label: reseller
+    class: Reseller
+    subclass_of: Party
+    # Not functional: two names (Friendly Bike Shop, Sports Products Store) are two resellers
+    # each, in different states and with different business types.
+    relations:
+      - {property: locatedIn, to: DimGeography.StateProvinceName, functional: false}
+      - {property: hasBusinessType, to: DimReseller.BusinessType, functional: false}
   - column: DimReseller.BusinessType
     label: reseller business type
+    class: ResellerBusinessType
+    subclass_of: Attribute
   - column: DimPromotion.EnglishPromotionName
     label: promotion
+    class: Promotion
+    subclass_of: Offer
   # --- synthetic samples ----------------------------------------------------------------
   - column: orders.region
     label: region
+    class: Region
+    subclass_of: Territory
   - column: products.category
     label: product category
+    class: ProductCategory
+    subclass_of: ProductTaxonomyLevel
   - column: customers.segment
     label: customer segment
+    class: CustomerSegment
+    subclass_of: Attribute

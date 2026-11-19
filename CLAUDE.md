@@ -34,7 +34,10 @@ demo/site/ + infra/demo/   the PUBLIC demo: static page + Terraform (CloudFront,
                        Live since 16 Nov 2026 at https://dz5iavwk61oau.cloudfront.net (profile agentic, ap-south-1)
 docs/                  architecture.md, adr/0001-0006 (0005 = schema graph: the graph holds the map, the warehouse holds the rows;
                        0006 = the chatbot: understand in code, ask when unsure, show the work; 0007 = why a knowledge
-                       graph + the ontology layer, PLANNED: OWL/SKOS, SHACL, SPARQL, graph DB); data/ = AdventureWorks
+                       graph + the ontology layer: OWL/SKOS/SHACL/SPARQL built, graph DB planned); data/ = AdventureWorks
+ontology/              GENERATED from specs/ by agentic_reporting/ontology.py (extra [ontology]: rdflib, pyshacl):
+                       OWL classes, SKOS vocabulary, SHACL shapes. Never edit by hand: change specs/entities.yaml
+                       or metrics.yaml, run `make ontology`; `make ontology-check` and CI job `ontology` fail on drift
 ```
 
 ## Commands

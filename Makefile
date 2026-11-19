@@ -9,11 +9,11 @@ DATA ?= samples/sales.sqlite
 Q ?= Which region had the highest net revenue last month?
 
 .PHONY: help install samples test lint eval demo demo-ask demo-chat demo-report eval-chat resume list demo-private demo-bedrock \
-        docker-build docker-demo clean
+        docker-build docker-demo clean ontology ontology-check
 
 help:
 	@echo "install samples test lint eval demo demo-ask demo-chat demo-report eval-chat resume THREAD=.. DECISION=.. list"
-	@echo "demo-private demo-bedrock docker-build docker-demo clean"
+	@echo "demo-private demo-bedrock docker-build docker-demo clean ontology ontology-check"
 
 install:
 	$(PY) -m pip install -e ".[all]"
@@ -61,6 +61,16 @@ eval-chat: $(AW)
 # LLM_MODEL=deepseek.v3.2 for the model chosen for this report.
 demo-report: $(AW)
 	$(PY) -m agentic_reporting.run --spec specs/aw_monthly.yaml --provider $(PROVIDER)
+
+# The ontology layer (ADR-0007; needs pip install -e ".[ontology]"): regenerate ontology/*.ttl from
+# specs/, and, when AdventureWorks is loaded, build its instance graph and validate it with SHACL.
+ontology:
+	$(PY) -m agentic_reporting.ontology $(if $(wildcard $(AW)),--db $(AW),)
+
+# Fails if ontology/*.ttl is stale (a spec changed and the files were not regenerated).
+ontology-check:
+	$(PY) -m agentic_reporting.ontology --check $(if $(wildcard $(AW)),--db $(AW),)
+	$(PY) -m pytest -q tests/test_ontology.py
 
 # make resume THREAD=sales_mbr-20260930T101500Z DECISION=approve   (or reject)
 resume:

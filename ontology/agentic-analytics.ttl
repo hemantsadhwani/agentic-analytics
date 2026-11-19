@@ -1,0 +1,273 @@
+@prefix ar: <https://github.com/hemantsadhwani/agentic-analytics/ontology#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://github.com/hemantsadhwani/agentic-analytics/ontology> a owl:Ontology ;
+    rdfs:label "Agentic analytics ontology"@en ;
+    rdfs:comment "Generated from specs/entities.yaml by agentic_reporting.ontology. Do not edit by hand."@en ;
+    owl:versionInfo "entities spec e551fbacd1c6" .
+
+ar:CustomerSegment a owl:Class ;
+    rdfs:label "customer segment"@en ;
+    rdfs:comment "Values of customers.segment."@en ;
+    rdfs:subClassOf ar:Attribute ;
+    ar:sourceColumn "customers.segment" .
+
+ar:Promotion a owl:Class ;
+    rdfs:label "promotion"@en ;
+    rdfs:comment "Values of DimPromotion.EnglishPromotionName."@en ;
+    rdfs:subClassOf ar:Offer ;
+    ar:sourceColumn "DimPromotion.EnglishPromotionName" .
+
+ar:Region a owl:Class ;
+    rdfs:label "region"@en ;
+    rdfs:comment "Values of orders.region."@en ;
+    rdfs:subClassOf ar:Territory ;
+    ar:sourceColumn "orders.region" .
+
+ar:clarifyingQuestion a owl:DatatypeProperty ;
+    rdfs:label "clarifying question"@en ;
+    rdfs:domain ar:MetricGroup ;
+    rdfs:range xsd:string .
+
+ar:column a owl:DatatypeProperty ;
+    rdfs:label "warehouse column"@en ;
+    rdfs:domain ar:BusinessEntity ;
+    rdfs:range xsd:string .
+
+ar:conceptScheme a owl:AnnotationProperty ;
+    rdfs:label "concept scheme"@en .
+
+ar:contentHash a owl:DatatypeProperty ;
+    rdfs:label "content hash (SHA-256)"@en ;
+    rdfs:domain ar:Chunk ;
+    rdfs:range xsd:string .
+
+ar:derivesFrom a owl:ObjectProperty ;
+    rdfs:label "derives from"@en ;
+    rdfs:domain ar:Metric ;
+    rdfs:range ar:Metric .
+
+ar:derivesFromColumn a owl:DatatypeProperty ;
+    rdfs:label "derives from column"@en ;
+    rdfs:domain ar:Metric ;
+    rdfs:range xsd:string .
+
+ar:expression a owl:DatatypeProperty ;
+    rdfs:label "expression"@en ;
+    rdfs:domain ar:Metric ;
+    rdfs:range xsd:string .
+
+ar:grain a owl:DatatypeProperty ;
+    rdfs:label "grain"@en ;
+    rdfs:domain ar:Metric ;
+    rdfs:range xsd:string .
+
+ar:hasBusinessType a owl:ObjectProperty ;
+    rdfs:label "has business type"@en ;
+    rdfs:domain ar:Reseller ;
+    rdfs:range ar:ResellerBusinessType .
+
+ar:hasColour a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "has colour"@en ;
+    rdfs:domain ar:Product ;
+    rdfs:range ar:Colour .
+
+ar:hasModel a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "has model"@en ;
+    rdfs:domain ar:Product ;
+    rdfs:range ar:ProductModel .
+
+ar:inProductCategory a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "in product category"@en ;
+    rdfs:domain ar:ProductSubcategory ;
+    rdfs:range ar:ProductCategory ;
+    rdfs:subPropertyOf skos:broader .
+
+ar:inProductSubcategory a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "in product subcategory"@en ;
+    rdfs:domain ar:ProductTaxonomyLevel ;
+    rdfs:range ar:ProductSubcategory ;
+    rdfs:subPropertyOf skos:broader .
+
+ar:inSalesTerritoryCountry a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "in sales territory country"@en ;
+    rdfs:domain ar:SalesTerritoryRegion ;
+    rdfs:range ar:SalesTerritoryCountry ;
+    rdfs:subPropertyOf skos:broader .
+
+ar:inSalesTerritoryGroup a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "in sales territory group"@en ;
+    rdfs:domain ar:SalesTerritoryCountry ;
+    rdfs:range ar:SalesTerritoryGroup ;
+    rdfs:subPropertyOf skos:broader .
+
+ar:inSalesTerritoryRegion a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:label "in sales territory region"@en ;
+    rdfs:domain ar:StateProvince ;
+    rdfs:range ar:SalesTerritoryRegion ;
+    rdfs:subPropertyOf skos:broader .
+
+ar:locatedIn a owl:ObjectProperty ;
+    rdfs:label "located in"@en ;
+    rdfs:domain ar:Reseller ;
+    rdfs:range ar:StateProvince .
+
+ar:mentions a owl:ObjectProperty ;
+    rdfs:label "mentions"@en ;
+    rdfs:domain ar:Chunk ;
+    rdfs:range ar:BusinessEntity .
+
+ar:metricName a owl:DatatypeProperty ;
+    rdfs:label "name"@en ;
+    rdfs:domain ar:Metric ;
+    rdfs:range xsd:string .
+
+ar:owner a owl:DatatypeProperty ;
+    rdfs:label "owner"@en ;
+    rdfs:domain ar:Metric ;
+    rdfs:range xsd:string .
+
+ar:source a owl:DatatypeProperty ;
+    rdfs:label "document source"@en ;
+    rdfs:domain ar:Chunk ;
+    rdfs:range xsd:string .
+
+ar:sourceColumn a owl:AnnotationProperty ;
+    rdfs:label "source column"@en .
+
+ar:table a owl:DatatypeProperty ;
+    rdfs:label "table"@en ;
+    rdfs:domain ar:Metric ;
+    rdfs:range xsd:string .
+
+ar:timeColumn a owl:DatatypeProperty ;
+    rdfs:label "time column"@en ;
+    rdfs:domain ar:Metric ;
+    rdfs:range xsd:string .
+
+ar:Colour a owl:Class ;
+    rdfs:label "colour"@en ;
+    rdfs:comment "Values of DimProduct.Color."@en ;
+    rdfs:subClassOf ar:Attribute ;
+    ar:sourceColumn "DimProduct.Color" .
+
+ar:MetricGroup a owl:Class ;
+    rdfs:label "ambiguous metric word"@en ;
+    rdfs:comment "A word that names several governed metrics; the assistant asks which one is meant."@en ;
+    rdfs:subClassOf skos:Concept .
+
+ar:Offer a owl:Class ;
+    rdfs:label "offer"@en ;
+    rdfs:comment "A promotion or discount."@en ;
+    rdfs:subClassOf ar:BusinessEntity ;
+    ar:conceptScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Offer> .
+
+ar:Party a owl:Class ;
+    rdfs:label "party"@en ;
+    rdfs:comment "A business the company sells through."@en ;
+    rdfs:subClassOf ar:BusinessEntity ;
+    ar:conceptScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Party> .
+
+ar:ProductCategory a owl:Class ;
+    rdfs:label "product category"@en ;
+    rdfs:comment "Values of DimProductCategory.EnglishProductCategoryName, products.category."@en ;
+    rdfs:subClassOf ar:ProductTaxonomyLevel ;
+    ar:sourceColumn "DimProductCategory.EnglishProductCategoryName",
+        "products.category" .
+
+ar:ProductModel a owl:Class ;
+    rdfs:label "product model"@en ;
+    rdfs:comment "Values of DimProduct.ModelName."@en ;
+    rdfs:subClassOf ar:ProductTaxonomyLevel ;
+    ar:sourceColumn "DimProduct.ModelName" .
+
+ar:ResellerBusinessType a owl:Class ;
+    rdfs:label "reseller business type"@en ;
+    rdfs:comment "Values of DimReseller.BusinessType."@en ;
+    rdfs:subClassOf ar:Attribute ;
+    ar:sourceColumn "DimReseller.BusinessType" .
+
+ar:SalesTerritoryGroup a owl:Class ;
+    rdfs:label "sales territory group"@en ;
+    rdfs:comment "Values of DimSalesTerritory.SalesTerritoryGroup."@en ;
+    rdfs:subClassOf ar:Territory ;
+    ar:sourceColumn "DimSalesTerritory.SalesTerritoryGroup" .
+
+ar:Product a owl:Class ;
+    rdfs:label "product"@en ;
+    rdfs:comment "Values of DimProduct.EnglishProductName."@en ;
+    rdfs:subClassOf ar:ProductTaxonomyLevel ;
+    ar:sourceColumn "DimProduct.EnglishProductName" .
+
+ar:ProductSubcategory a owl:Class ;
+    rdfs:label "product subcategory"@en ;
+    rdfs:comment "Values of DimProductSubcategory.EnglishProductSubcategoryName."@en ;
+    rdfs:subClassOf ar:ProductTaxonomyLevel ;
+    ar:sourceColumn "DimProductSubcategory.EnglishProductSubcategoryName" .
+
+ar:Reseller a owl:Class ;
+    rdfs:label "reseller"@en ;
+    rdfs:comment "Values of DimReseller.ResellerName."@en ;
+    rdfs:subClassOf ar:Party ;
+    ar:sourceColumn "DimReseller.ResellerName" .
+
+ar:SalesTerritoryCountry a owl:Class ;
+    rdfs:label "sales territory country"@en ;
+    rdfs:comment "Values of DimSalesTerritory.SalesTerritoryCountry."@en ;
+    rdfs:subClassOf ar:Territory ;
+    ar:sourceColumn "DimSalesTerritory.SalesTerritoryCountry" .
+
+ar:SalesTerritoryRegion a owl:Class ;
+    rdfs:label "sales territory region"@en ;
+    rdfs:comment "Values of DimSalesTerritory.SalesTerritoryRegion."@en ;
+    rdfs:subClassOf ar:Territory ;
+    ar:sourceColumn "DimSalesTerritory.SalesTerritoryRegion" .
+
+ar:StateProvince a owl:Class ;
+    rdfs:label "state or province (of the customer or reseller)"@en ;
+    rdfs:comment "Values of DimGeography.StateProvinceName."@en ;
+    rdfs:subClassOf ar:Territory ;
+    ar:sourceColumn "DimGeography.StateProvinceName" .
+
+ar:Attribute a owl:Class ;
+    rdfs:label "attribute"@en ;
+    rdfs:comment "A descriptive value used as a filter (colour, business type, segment)."@en ;
+    rdfs:subClassOf ar:BusinessEntity ;
+    ar:conceptScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Attribute> .
+
+ar:Chunk a owl:Class ;
+    rdfs:label "document chunk"@en ;
+    rdfs:comment "A retrievable passage (specs/documents.yaml)."@en .
+
+ar:ProductTaxonomyLevel a owl:Class ;
+    rdfs:label "product taxonomy level"@en ;
+    rdfs:comment "Product, product model, subcategory or category."@en ;
+    rdfs:subClassOf ar:BusinessEntity ;
+    ar:conceptScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/ProductTaxonomyLevel> .
+
+ar:Territory a owl:Class ;
+    rdfs:label "territory"@en ;
+    rdfs:comment "A place sales are booked to, from a state or province up to a territory group."@en ;
+    rdfs:subClassOf ar:BusinessEntity ;
+    ar:conceptScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Territory> .
+
+ar:BusinessEntity a owl:Class ;
+    rdfs:label "business entity"@en ;
+    rdfs:comment "A named thing in the business vocabulary, read from warehouse master data."@en ;
+    rdfs:subClassOf skos:Concept .
+
+ar:Metric a owl:Class ;
+    rdfs:label "governed metric"@en ;
+    rdfs:comment "One agreed definition of a business number (specs/metrics.yaml)."@en ;
+    rdfs:subClassOf skos:Concept .
+

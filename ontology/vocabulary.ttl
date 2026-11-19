@@ -1,0 +1,328 @@
+@prefix ar: <https://github.com/hemantsadhwani/agentic-analytics/ontology#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/mom_change_pct> a ar:Metric ;
+    skos:altLabel "change in revenue"@en,
+        "change in sales"@en,
+        "mom"@en,
+        "mom change"@en,
+        "month over month change"@en,
+        "monthly change"@en,
+        "revenue growth"@en ;
+    skos:definition "Percent change of net revenue against the previous calendar month."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Month-on-month change in net revenue (%)"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:derivesFrom <https://github.com/hemantsadhwani/agentic-analytics/id/metric/net_revenue> ;
+    ar:derivesFromColumn "orders.order_date" ;
+    ar:expression "ROUND(100.0 * (cur.net_revenue - prev.net_revenue) / prev.net_revenue, 1)" ;
+    ar:grain "calendar month; cur and prev are net_revenue for month m and month m-1, where month = substr(orders.order_date, 1, 7)" ;
+    ar:metricName "mom_change_pct" ;
+    ar:owner "Finance analytics (synthetic owner)" ;
+    ar:table "orders" ;
+    ar:timeColumn "orders.order_date" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/mttr_hours> a ar:Metric ;
+    skos:altLabel "mean time to recovery"@en,
+        "mean time to restore"@en,
+        "mttr"@en,
+        "recovery time"@en,
+        "restore time"@en,
+        "time to restore"@en ;
+    skos:definition "Average minutes from open to restore, in hours."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Mean time to restore (hours)"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:derivesFromColumn "incidents.minutes_to_restore" ;
+    ar:expression "ROUND(AVG(incidents.minutes_to_restore) / 60.0, 3)" ;
+    ar:grain "incident; average over any dimension or period" ;
+    ar:metricName "mttr_hours" ;
+    ar:owner "SRE leadership (synthetic owner)" ;
+    ar:table "incidents" ;
+    ar:timeColumn "incidents.opened_at" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/orders> a ar:Metric ;
+    skos:altLabel "number of orders"@en,
+        "order count"@en,
+        "order volume"@en,
+        "orders placed"@en ;
+    skos:definition "Number of distinct orders."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Orders"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:derivesFromColumn "orders.order_id" ;
+    ar:expression "COUNT(DISTINCT orders.order_id)" ;
+    ar:grain "one order per orders row; count over any dimension or period" ;
+    ar:metricName "orders" ;
+    ar:owner "Sales operations (synthetic owner)" ;
+    ar:table "orders" ;
+    ar:timeColumn "orders.order_date" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/sev1_share> a ar:Metric ;
+    skos:altLabel "critical incident share"@en,
+        "sev1 percentage"@en,
+        "sev1 rate"@en,
+        "sev1 share"@en,
+        "share of sev1"@en ;
+    skos:definition "Percent of incidents whose severity is SEV1 (the worst)."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "SEV1 share of incidents (%)"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:derivesFrom <https://github.com/hemantsadhwani/agentic-analytics/id/metric/incident_count> ;
+    ar:derivesFromColumn "incidents.severity" ;
+    ar:expression "ROUND(100.0 * SUM(incidents.severity = 'SEV1') / COUNT(incidents.incident_id), 2)" ;
+    ar:grain "incident; a percentage over any dimension or period" ;
+    ar:metricName "sev1_share" ;
+    ar:owner "SRE leadership (synthetic owner)" ;
+    ar:table "incidents" ;
+    ar:timeColumn "incidents.opened_at" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Attribute> a skos:ConceptScheme ;
+    skos:prefLabel "Attributes"@en .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Offer> a skos:ConceptScheme ;
+    skos:prefLabel "Offers"@en .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Party> a skos:ConceptScheme ;
+    skos:prefLabel "Parties"@en .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/scheme/ProductTaxonomyLevel> a skos:ConceptScheme ;
+    skos:prefLabel "Product taxonomy"@en .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Territory> a skos:ConceptScheme ;
+    skos:prefLabel "Sales territory hierarchy"@en .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/incident_count> a ar:Metric ;
+    skos:altLabel "incident volume"@en,
+        "incidents"@en,
+        "number of incidents"@en,
+        "outages"@en ;
+    skos:definition "Number of incidents opened."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Incident count"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:derivesFromColumn "incidents.incident_id" ;
+    ar:expression "COUNT(incidents.incident_id)" ;
+    ar:grain "one incident per incidents row; count over any dimension or period" ;
+    ar:metricName "incident_count" ;
+    ar:owner "SRE leadership (synthetic owner)" ;
+    ar:table "incidents" ;
+    ar:timeColumn "incidents.opened_at" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/internet_gross_margin> a ar:Metric ;
+    skos:altLabel "internet gross margin"@en,
+        "internet gross profit"@en,
+        "internet margin"@en,
+        "internet profit"@en,
+        "online gross margin"@en,
+        "online gross profit"@en,
+        "online margin"@en,
+        "online profit"@en ;
+    skos:broader <https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/margin> ;
+    skos:definition "Sales amount minus standard product cost, internet orders."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Internet gross margin (USD)"@en ;
+    ar:derivesFromColumn "FactInternetSales.SalesAmount",
+        "FactInternetSales.TotalProductCost" ;
+    ar:expression "ROUND(SUM(FactInternetSales.SalesAmount - FactInternetSales.TotalProductCost), 2)" ;
+    ar:grain "order line; sum over any dimension or period" ;
+    ar:metricName "internet_gross_margin" ;
+    ar:owner "Finance analytics (sample owner)" ;
+    ar:table "FactInternetSales" ;
+    ar:timeColumn "FactInternetSales.OrderDate" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/internet_orders> a ar:Metric ;
+    skos:altLabel "internet orders"@en,
+        "number of internet orders"@en,
+        "number of online orders"@en,
+        "online orders"@en,
+        "web orders"@en ;
+    skos:broader <https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/orders> ;
+    skos:definition "Number of distinct internet orders (not order lines)."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Internet orders"@en ;
+    ar:derivesFromColumn "FactInternetSales.SalesOrderNumber" ;
+    ar:expression "COUNT(DISTINCT FactInternetSales.SalesOrderNumber)" ;
+    ar:grain "one order per SalesOrderNumber (an order has several lines); count over any dimension or period" ;
+    ar:metricName "internet_orders" ;
+    ar:owner "Digital sales (sample owner)" ;
+    ar:table "FactInternetSales" ;
+    ar:timeColumn "FactInternetSales.OrderDate" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/internet_sales> a ar:Metric ;
+    skos:altLabel "ecommerce sales"@en,
+        "internet revenue"@en,
+        "internet sale amount"@en,
+        "internet sales"@en,
+        "online revenue"@en,
+        "online sales"@en,
+        "web sales"@en ;
+    skos:broader <https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/sales> ;
+    skos:definition "Sales amount of internet orders, after discounts, before tax and freight."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Internet sales (USD)"@en ;
+    ar:derivesFromColumn "FactInternetSales.SalesAmount" ;
+    ar:expression "ROUND(SUM(FactInternetSales.SalesAmount), 2)" ;
+    ar:grain "order line; sum over any dimension (product, territory, customer, promotion) or period" ;
+    ar:metricName "internet_sales" ;
+    ar:owner "Digital sales (sample owner)" ;
+    ar:table "FactInternetSales" ;
+    ar:timeColumn "FactInternetSales.OrderDate" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/internet_units> a ar:Metric ;
+    skos:altLabel "internet units"@en,
+        "online quantity"@en,
+        "online units"@en,
+        "units sold on the internet"@en,
+        "units sold online"@en ;
+    skos:broader <https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/units> ;
+    skos:definition "Units sold through internet orders."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Internet units sold"@en ;
+    ar:derivesFromColumn "FactInternetSales.OrderQuantity" ;
+    ar:expression "SUM(FactInternetSales.OrderQuantity)" ;
+    ar:grain "order line; sum over any dimension or period" ;
+    ar:metricName "internet_units" ;
+    ar:owner "Digital sales (sample owner)" ;
+    ar:table "FactInternetSales" ;
+    ar:timeColumn "FactInternetSales.OrderDate" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/net_revenue> a ar:Metric ;
+    skos:altLabel "income"@en,
+        "net sales"@en,
+        "revenue"@en,
+        "sales"@en,
+        "turnover"@en ;
+    skos:definition "Revenue after line discounts (orders.revenue is already net of discount)."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Net revenue"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:derivesFromColumn "orders.revenue" ;
+    ar:expression "ROUND(SUM(orders.revenue), 2)" ;
+    ar:grain "order line; sum over any dimension (region, product, customer) or period" ;
+    ar:metricName "net_revenue" ;
+    ar:owner "Finance analytics (synthetic owner)" ;
+    ar:table "orders" ;
+    ar:timeColumn "orders.order_date" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/reseller_gross_margin> a ar:Metric ;
+    skos:altLabel "dealer margin"@en,
+        "reseller gross margin"@en,
+        "reseller gross profit"@en,
+        "reseller margin"@en,
+        "reseller profit"@en ;
+    skos:broader <https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/margin> ;
+    skos:definition "Sales amount minus standard product cost, reseller orders."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Reseller gross margin (USD)"@en ;
+    ar:derivesFromColumn "FactResellerSales.SalesAmount",
+        "FactResellerSales.TotalProductCost" ;
+    ar:expression "ROUND(SUM(FactResellerSales.SalesAmount - FactResellerSales.TotalProductCost), 2)" ;
+    ar:grain "order line; sum over any dimension or period" ;
+    ar:metricName "reseller_gross_margin" ;
+    ar:owner "Finance analytics (sample owner)" ;
+    ar:table "FactResellerSales" ;
+    ar:timeColumn "FactResellerSales.OrderDate" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/reseller_orders> a ar:Metric ;
+    skos:altLabel "channel orders"@en,
+        "dealer orders"@en,
+        "number of reseller orders"@en,
+        "reseller orders"@en ;
+    skos:broader <https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/orders> ;
+    skos:definition "Number of distinct reseller orders (not order lines)."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Reseller orders"@en ;
+    ar:derivesFromColumn "FactResellerSales.SalesOrderNumber" ;
+    ar:expression "COUNT(DISTINCT FactResellerSales.SalesOrderNumber)" ;
+    ar:grain "one order per SalesOrderNumber; count over any dimension or period" ;
+    ar:metricName "reseller_orders" ;
+    ar:owner "Channel sales (sample owner)" ;
+    ar:table "FactResellerSales" ;
+    ar:timeColumn "FactResellerSales.OrderDate" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/reseller_sales> a ar:Metric ;
+    skos:altLabel "channel sales"@en,
+        "dealer sales"@en,
+        "reseller revenue"@en,
+        "reseller sales"@en,
+        "store sales"@en,
+        "wholesale sales"@en ;
+    skos:broader <https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/sales> ;
+    skos:definition "Sales amount of reseller (bike shop) orders, after discounts, before tax."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Reseller sales (USD)"@en ;
+    ar:derivesFromColumn "FactResellerSales.SalesAmount" ;
+    ar:expression "ROUND(SUM(FactResellerSales.SalesAmount), 2)" ;
+    ar:grain "order line; sum over any dimension (product, territory, reseller, promotion) or period" ;
+    ar:metricName "reseller_sales" ;
+    ar:owner "Channel sales (sample owner)" ;
+    ar:table "FactResellerSales" ;
+    ar:timeColumn "FactResellerSales.OrderDate" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric/reseller_units> a ar:Metric ;
+    skos:altLabel "dealer units"@en,
+        "reseller quantity"@en,
+        "reseller units"@en,
+        "units sold to resellers"@en ;
+    skos:broader <https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/units> ;
+    skos:definition "Units sold through reseller orders."@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:prefLabel "Reseller units sold"@en ;
+    ar:derivesFromColumn "FactResellerSales.OrderQuantity" ;
+    ar:expression "SUM(FactResellerSales.OrderQuantity)" ;
+    ar:grain "order line; sum over any dimension or period" ;
+    ar:metricName "reseller_units" ;
+    ar:owner "Channel sales (sample owner)" ;
+    ar:table "FactResellerSales" ;
+    ar:timeColumn "FactResellerSales.OrderDate" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/margin> a ar:MetricGroup ;
+    skos:altLabel "gross margin"@en,
+        "gross profit"@en,
+        "profit"@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:narrower <https://github.com/hemantsadhwani/agentic-analytics/id/metric/internet_gross_margin>,
+        <https://github.com/hemantsadhwani/agentic-analytics/id/metric/reseller_gross_margin> ;
+    skos:prefLabel "margin"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:clarifyingQuestion "Gross margin on internet or reseller sales?" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/orders> a ar:MetricGroup ;
+    skos:altLabel "number of orders"@en,
+        "order count"@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:narrower <https://github.com/hemantsadhwani/agentic-analytics/id/metric/internet_orders>,
+        <https://github.com/hemantsadhwani/agentic-analytics/id/metric/reseller_orders> ;
+    skos:prefLabel "orders"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:clarifyingQuestion "Internet orders or reseller orders?" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/sales> a ar:MetricGroup ;
+    skos:altLabel "revenue"@en,
+        "sale amount"@en,
+        "sell"@en,
+        "sold"@en,
+        "turnover"@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:narrower <https://github.com/hemantsadhwani/agentic-analytics/id/metric/internet_sales>,
+        <https://github.com/hemantsadhwani/agentic-analytics/id/metric/reseller_sales> ;
+    skos:prefLabel "sales"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:clarifyingQuestion "This warehouse has two sales channels. Which sales do you mean?" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/metric-group/units> a ar:MetricGroup ;
+    skos:altLabel "quantity"@en,
+        "units sold"@en ;
+    skos:inScheme <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    skos:narrower <https://github.com/hemantsadhwani/agentic-analytics/id/metric/internet_units>,
+        <https://github.com/hemantsadhwani/agentic-analytics/id/metric/reseller_units> ;
+    skos:prefLabel "units"@en ;
+    skos:topConceptOf <https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> ;
+    ar:clarifyingQuestion "Units sold online or to resellers?" .
+
+<https://github.com/hemantsadhwani/agentic-analytics/id/scheme/Metric> a skos:ConceptScheme ;
+    owl:versionInfo "metrics spec 1fba3b04d57e" ;
+    skos:prefLabel "Governed metrics"@en .
+

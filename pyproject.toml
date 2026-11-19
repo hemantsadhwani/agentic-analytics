@@ -20,7 +20,10 @@ dependencies = [
 [project.optional-dependencies]
 llm = ["anthropic[bedrock]>=0.49,<2", "boto3>=1.35"]
 dev = ["pytest>=8", "ruff>=0.5"]
-all = ["agentic-reporting[llm,dev]"]
+# The ontology layer (agentic_reporting/ontology.py, ADR-0007): OWL/SKOS/SHACL/SPARQL. Optional;
+# nothing on the default path imports it, and tests/test_ontology.py skips without it.
+ontology = ["rdflib>=7.1,<8", "pyshacl>=0.30,<1"]
+all = ["agentic-reporting[llm,dev,ontology]"]
 
 [project.scripts]
 agentic-reporting = "agentic_reporting.run:main"
